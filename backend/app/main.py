@@ -151,7 +151,10 @@ app = FastAPI(
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=[
+        "http://localhost:5173",           # Local development
+        "https://lifeskillapp.vercel.app", # Production Vercel deployment
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
