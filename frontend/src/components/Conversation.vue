@@ -54,7 +54,7 @@
 
 <script setup>
 import { ref, nextTick, onMounted, onUnmounted } from 'vue'
-import Vapi from '@vapi-ai/web'
+import { Vapi } from '@vapi-ai/web'
 import { useRouter } from 'vue-router'
 import Loading from '@/assets/loading.svg'
 
