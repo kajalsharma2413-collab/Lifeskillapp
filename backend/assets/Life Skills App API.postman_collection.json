@@ -1,0 +1,3434 @@
+{
+  "info": {
+    "_postman_id": "f49b2900-f8e0-4e4d-9fd9-c77a13ca33b3",
+    "name": "Life Skills App API - Complete Testing Suite v2.0",
+    "description": "Updated comprehensive API testing collection for Life Skills App Backend - Matches actual codebase with all 85+ endpoints, proper authentication flows, and accurate request/response formats.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "46085518"
+  },
+  "item": [
+    {
+      "name": "🏥 Health & System Info",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success field', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Firebase connectivity check', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data).to.have.property('firebase_status');",
+                  "    pm.expect(responseJson.data.firebase_status).to.equal('healthy');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Comprehensive health check including async Firebase connectivity"
+          },
+          "response": []
+        },
+        {
+          "name": "Root API Info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains API info', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data).to.have.property('name');",
+                  "    pm.expect(responseJson.data.name).to.include('Life Skills');",
+                  "    pm.expect(responseJson.data).to.have.property('endpoints');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Root endpoint with API information and available endpoints"
+          },
+          "response": []
+        }
+      ],
+      "description": "System health checks and API information endpoints"
+    },
+    {
+      "name": "🔐 Authentication Flow",
+      "item": [
+        {
+          "name": "Complete Registration (Parent)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Registration successful', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    ",
+                  "    if (responseJson.data && responseJson.data.user) {",
+                  "        pm.environment.set('userId', responseJson.data.user.id);",
+                  "        pm.environment.set('userRole', 'parent');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firebase_id_token\": \"{{firebaseIdToken}}\",\n  \"username\": \"parent_test\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"Parent\",\n  \"role\": \"parent\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/complete-registration",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "complete-registration"]
+            },
+            "description": "Complete user registration after Firebase Auth signup (Parent)"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Parent Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Parent code generated', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    ",
+                  "    if (responseJson.data && responseJson.data.code) {",
+                  "        pm.environment.set('parentCode', responseJson.data.code);",
+                  "        console.log('Parent code set:', responseJson.data.code);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/generate-parent-code",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "generate-parent-code"]
+            },
+            "description": "Generate a parent code for child registration (requires parent role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Registration (Child)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Registration successful', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "",
+                  "    if (responseJson.data && responseJson.data.user) {",
+                  "        pm.environment.set('childUserId', responseJson.data.user.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firebase_id_token\": \"{{childFirebaseToken}}\",\n  \"username\": \"child_test\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"Child\",\n  \"role\": \"user\",\n  \"age\": 10,\n  \"grade_level\": \"V\",\n  \"parent_code\": \"{{parentCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/complete-registration",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "complete-registration"]
+            },
+            "description": "Complete user registration after Firebase Auth signup (Child with parent code)"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Auth Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Authentication verified', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firebase_id_token\": \"{{firebaseIdToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "verify"]
+            },
+            "description": "Verify Firebase ID token and return user data"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User (/auth/me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User info retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('user');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Get current user information"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Current User (/auth/me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User updated successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"updated_username\",\n    \"first_name\": \"UpdatedFirst\",\n    \"last_name\": \"UpdatedLast\",\n    \"age\": 11,\n    \"grade_level\": \"VI\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Update current user's own profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Auth Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Auth status retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('is_authenticated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "status"]
+            },
+            "description": "Get current authentication status"
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Firebase Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Firebase data synced', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/sync-firebase",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "sync-firebase"]
+            },
+            "description": "Sync user data from Firebase Auth (email verification, profile updates, etc.)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Complete authentication flow using Firebase Auth with comprehensive testing"
+    },
+    {
+      "name": "👤 User Management",
+      "item": [
+        {
+          "name": "Get User Dashboard Info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Dashboard info retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('user');",
+                  "    pm.expect(responseJson.data.user).to.have.property('points');",
+                  "    pm.expect(responseJson.data.user).to.have.property('badges_count');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "me"]
+            },
+            "description": "Get current user's information for dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Badges",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Badges retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('badges');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/badges",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "badges"]
+            },
+            "description": "Get user's earned badges"
+          },
+          "response": []
+        },
+        {
+          "name": "Analyze Diary Entry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Diary analysis completed', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('summary');",
+                  "    pm.expect(responseJson.data).to.have.property('score');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diary_entry\": \"Today was a great day at school. I learned about fractions in math and played with my friends during recess. I feel happy and excited about tomorrow.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/diary_summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "diary_summary"]
+            },
+            "description": "Analyzes a diary entry and returns a summary and score"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User stats retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('stats');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/my-stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "my-stats"]
+            },
+            "description": "Get current user's own statistics and progress"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Profile retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('user');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/profile/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "profile", "{{userId}}"]
+            },
+            "description": "Get user profile by ID (requires authorization)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Profile updated', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"updated_username\",\n  \"first_name\": \"UpdatedFirst\",\n  \"last_name\": \"UpdatedLast\",\n  \"age\": 11,\n  \"grade_level\": \"VI\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/profile/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "profile", "{{userId}}"]
+            },
+            "description": "Update user profile (can only update own profile or children if parent)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Children (Parent only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Children list retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson).to.have.property('data');",
+                  "    pm.expect(responseJson).to.have.property('pagination');",
+                  "",
+                  "    if (responseJson.data && responseJson.data.length > 0) {",
+                  "        pm.environment.set('childId', responseJson.data[0].id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/children?include_inactive=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "children"],
+              "query": [
+                {
+                  "key": "include_inactive",
+                  "value": "false",
+                  "description": "Include inactive children"
+                }
+              ]
+            },
+            "description": "Get all children for the current parent (requires parent role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Parent Info (Child only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Parent info retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('parent');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/parent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "parent"]
+            },
+            "description": "Get parent information for the current child user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Stats by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User stats retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('stats');",
+                  "    pm.expect(responseJson.data.stats).to.have.property('points');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/stats/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "stats", "{{userId}}"]
+            },
+            "description": "Get user statistics and progress"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Child Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Account deletion completed', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"confirmation_text\": \"DELETE\",\n    \"parent_code\": \"{{parentCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/delete-child-account",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "delete-child-account"]
+            },
+            "description": "Delete child account (requires parent code validation)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Parent Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Account deletion completed', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"confirmation_text\": \"DELETE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/delete-parent-account",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "delete-parent-account"]
+            },
+            "description": "Delete parent account (only if no children are linked)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Complete user profile and management endpoints with role-based access"
+    },
+    {
+      "name": "🛡️ Safety Skills",
+      "item": [
+        {
+          "name": "📺 Safety Videos",
+          "item": [
+            {
+              "name": "Get All Safety Videos",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Videos retrieved', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('videos');",
+                      "    pm.expect(responseJson.data.videos).to.be.an('array');",
+                      "",
+                      "    if (responseJson.data.videos.length > 0) {",
+                      "        pm.environment.set('videoId', responseJson.data.videos[0].id);",
+                      "    }",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/videos",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "videos"]
+                },
+                "description": "Get all safety videos"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Safety Video by ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Video details retrieved', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('video');",
+                      "    pm.expect(responseJson.data.video).to.have.property('userLiked');",
+                      "    pm.expect(responseJson.data.video).to.have.property('userDisliked');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/video/{{videoId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "video", "{{videoId}}"]
+                },
+                "description": "Get safety video by ID with user reaction status"
+              },
+              "response": []
+            },
+            {
+              "name": "Track Video View",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('View tracked', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/video/{{videoId}}/view",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "video", "{{videoId}}", "view"]
+                },
+                "description": "Track video view for analytics"
+              },
+              "response": []
+            },
+            {
+              "name": "Like Safety Video",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Like recorded', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/video/{{videoId}}/like",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "video", "{{videoId}}", "like"]
+                },
+                "description": "Like a safety video"
+              },
+              "response": []
+            },
+            {
+              "name": "Dislike Safety Video",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Dislike recorded', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/video/{{videoId}}/dislike",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "video", "{{videoId}}", "dislike"]
+                },
+                "description": "Dislike a safety video"
+              },
+              "response": []
+            },
+            {
+              "name": "Remove Video Like",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Like removed', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/video/{{videoId}}/remove-like",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "video", "{{videoId}}", "remove-like"]
+                },
+                "description": "Remove like from a safety video"
+              },
+              "response": []
+            },
+            {
+              "name": "Remove Video Dislike",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Dislike removed', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/video/{{videoId}}/remove-dislike",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "video", "{{videoId}}", "remove-dislike"]
+                },
+                "description": "Remove dislike from a safety video"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Video Reaction Status",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Reaction status retrieved', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('liked');",
+                      "    pm.expect(responseJson.data).to.have.property('disliked');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/video/{{videoId}}/reaction",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "video", "{{videoId}}", "reaction"]
+                },
+                "description": "Get user's reaction status for a video"
+              },
+              "response": []
+            }
+          ],
+          "description": "Safety video content and interaction endpoints"
+        },
+        {
+          "name": "📚 Safety Comics",
+          "item": [
+            {
+              "name": "Get All Safety Comics",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Comics retrieved', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('comics');",
+                      "    pm.expect(responseJson.data.comics).to.be.an('array');",
+                      "",
+                      "    if (responseJson.data.comics.length > 0) {",
+                      "        pm.environment.set('comicId', responseJson.data.comics[0].id);",
+                      "    }",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/comics",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "comics"]
+                },
+                "description": "Get all safety comics"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Safety Comic by ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Comic details retrieved', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('comic');",
+                      "    pm.expect(responseJson.data.comic).to.have.property('userLiked');",
+                      "    pm.expect(responseJson.data.comic).to.have.property('userDisliked');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/comic/{{comicId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "comic", "{{comicId}}"]
+                },
+                "description": "Get safety comic by ID with user reaction status"
+              },
+              "response": []
+            },
+            {
+              "name": "Track Comic View",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('View tracked', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/comic/{{comicId}}/view",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "comic", "{{comicId}}", "view"]
+                },
+                "description": "Track comic view for analytics"
+              },
+              "response": []
+            },
+            {
+              "name": "Like Safety Comic",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Like recorded', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/comic/{{comicId}}/like",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "comic", "{{comicId}}", "like"]
+                },
+                "description": "Like a safety comic"
+              },
+              "response": []
+            },
+            {
+              "name": "Dislike Safety Comic",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Dislike recorded', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/comic/{{comicId}}/dislike",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "comic", "{{comicId}}", "dislike"]
+                },
+                "description": "Dislike a safety comic"
+              },
+              "response": []
+            },
+            {
+              "name": "Remove Comic Like",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Like removed', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/comic/{{comicId}}/remove-like",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "comic", "{{comicId}}", "remove-like"]
+                },
+                "description": "Remove like from a safety comic"
+              },
+              "response": []
+            },
+            {
+              "name": "Remove Comic Dislike",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Dislike removed', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/safety/comic/{{comicId}}/remove-dislike",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "safety", "comic", "{{comicId}}", "remove-dislike"]
+                },
+                "description": "Remove dislike from a safety comic"
+              },
+              "response": []
+            }
+          ],
+          "description": "Safety comic content and interaction endpoints"
+        }
+      ],
+      "description": "Complete safety skills content system with videos, comics, and user interactions"
+    },
+    {
+      "name": "💰 Finance Skills",
+      "item": [
+        {
+          "name": "Get All Finance Videos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Finance videos retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('videos');",
+                  "    pm.expect(responseJson.data.videos).to.be.an('array');",
+                  "",
+                  "    if (responseJson.data.videos.length > 0) {",
+                  "        pm.environment.set('financeVideoId', responseJson.data.videos[0].id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/finance/videos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "finance", "videos"]
+            },
+            "description": "Get all finance videos"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Finance Video by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Finance video details retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('video');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/finance/video/{{financeVideoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "finance", "video", "{{financeVideoId}}"]
+            },
+            "description": "Get finance video by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Track Finance Video View",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('View tracked', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/finance/video/{{financeVideoId}}/view",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "finance", "video", "{{financeVideoId}}", "view"]
+            },
+            "description": "Track finance video view for analytics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Finance Game Level",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Game level retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('income');",
+                  "    pm.expect(responseJson.data).to.have.property('items');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/finance/game/level/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "finance", "game", "level", "1"]
+            },
+            "description": "Get finance game level data"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Game Score",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Score submitted', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('attempt_id');",
+                  "    pm.expect(responseJson.data).to.have.property('score');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"username\": \"test_user\",\n  \"level\": 1,\n  \"score\": 85,\n  \"needs\": 3,\n  \"wants\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/finance/game/level/1/score",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "finance", "game", "level", "1", "score"]
+            },
+            "description": "Submit game score for a level"
+          },
+          "response": []
+        }
+      ],
+      "description": "Finance skills content and gaming system"
+    },
+    {
+      "name": "📝 Diary & Mood",
+      "item": [
+        {
+          "name": "Analyze Diary Entry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Diary analysis completed', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('mood');",
+                  "    pm.expect(responseJson.data).to.have.property('emoji');",
+                  "    pm.expect(responseJson.data).to.have.property('response');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entry\": \"Today was a wonderful day! I learned about dinosaurs in science class and my teacher said I did a great job on my presentation. I'm feeling really proud and happy. After school, I played soccer with my friends and we won our match. I can't wait to tell my parents about everything that happened!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diary/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diary", "analyze"]
+            },
+            "description": "Analyze diary entry with AI and return mood, emoji, and response"
+          },
+          "response": []
+        },
+        {
+          "name": "Save Diary Entry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Diary entry saved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('entry_id');",
+                  "",
+                  "    if (responseJson.data.entry_id) {",
+                  "        pm.environment.set('diaryEntryId', responseJson.data.entry_id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"entry\": \"Today was a wonderful day! I learned about dinosaurs in science class and my teacher said I did a great job on my presentation. I'm feeling really proud and happy.\",\n  \"mood\": \"happy\",\n  \"emoji\": \"😊\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diary/entry",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diary", "entry"]
+            },
+            "description": "Save diary entry to database"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recent Diary Entries",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Diary entries retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('entries');",
+                  "    pm.expect(responseJson.data.entries).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diary/entries?limit=7",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diary", "entries"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "7",
+                  "description": "Number of recent entries to retrieve"
+                }
+              ]
+            },
+            "description": "Get user's recent diary entries"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Mood Trend",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Mood trend retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('mood_data');",
+                  "    pm.expect(responseJson.data).to.have.property('average_mood');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/diary/mood-trend?days=7",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "diary", "mood-trend"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "7",
+                  "description": "Number of days for trend analysis"
+                }
+              ]
+            },
+            "description": "Get user's mood trend over the specified number of days"
+          },
+          "response": []
+        }
+      ],
+      "description": "Diary entry and mood tracking system with AI analysis"
+    },
+    {
+      "name": "🧠 Problem Solving",
+      "item": [
+        {
+          "name": "Get Today's Progress",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Progress retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('date');",
+                  "    pm.expect(responseJson.data).to.have.property('attempted');",
+                  "    pm.expect(responseJson.data).to.have.property('correct');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/problem-solving/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "problem-solving", "progress"]
+            },
+            "description": "Get user's problem-solving progress for today"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Daily Questions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Questions retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('questions');",
+                  "    pm.expect(responseJson.data.questions).to.be.an('array');",
+                  "    pm.expect(responseJson.data.questions).to.have.lengthOf(6);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/problem-solving/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "problem-solving", "questions"]
+            },
+            "description": "Get 6 daily AI-generated problem-solving questions"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Answer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Answer submitted', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('correct');",
+                  "    pm.expect(responseJson.data).to.have.property('attempted');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/problem-solving/answer?question_index=0&answer_index=2&is_correct=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "problem-solving", "answer"],
+              "query": [
+                {
+                  "key": "question_index",
+                  "value": "0",
+                  "description": "Question index (0-5)"
+                },
+                {
+                  "key": "answer_index",
+                  "value": "2",
+                  "description": "Selected answer index"
+                },
+                {
+                  "key": "is_correct",
+                  "value": "true",
+                  "description": "Whether the answer is correct"
+                }
+              ]
+            },
+            "description": "Submit answer for a problem-solving question"
+          },
+          "response": []
+        },
+        {
+          "name": "Award Problem Solving Badge",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Badge process completed', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('badge_earned');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/problem-solving/badges/problem-solving",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "problem-solving", "badges", "problem-solving"]
+            },
+            "description": "Award badge for problem-solving completion (4+ correct out of 6)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Daily problem-solving activities with AI-generated questions and feedback"
+    },
+    {
+      "name": "🎯 Quiz System",
+      "item": [
+        {
+          "name": "Get Safety Video Quiz",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Quiz questions retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('questions');",
+                  "    pm.expect(responseJson.data.questions).to.be.an('array');",
+                  "    pm.expect(responseJson.data).to.have.property('min_score');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/quiz/video/{{videoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "quiz", "video", "{{videoId}}"]
+            },
+            "description": "Get quiz questions for a safety video"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Safety Comic Quiz",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Quiz questions retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('questions');",
+                  "    pm.expect(responseJson.data.questions).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/quiz/comic/{{comicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "quiz", "comic", "{{comicId}}"]
+            },
+            "description": "Get quiz questions for a safety comic"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Finance Video Quiz",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Quiz questions retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('questions');",
+                  "    pm.expect(responseJson.data.questions).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/quiz/finance/{{financeVideoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "quiz", "finance", "{{financeVideoId}}"]
+            },
+            "description": "Get quiz questions for a finance video"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Quiz Score",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Score submitted', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('passed');",
+                  "    pm.expect(responseJson.data).to.have.property('score');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{userId}}\",\n  \"username\": \"test_user\",\n  \"quiz_id\": \"{{videoId}}\",\n  \"score\": 80,\n  \"attempt\": 1,\n  \"badge_link\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/quiz/scores/{{videoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "quiz", "scores", "{{videoId}}"]
+            },
+            "description": "Submit quiz score and award badge if passed"
+          },
+          "response": []
+        }
+      ],
+      "description": "Quiz system for safety videos, comics, and finance content"
+    },
+    {
+      "name": "🤖 AI & Chatbot",
+      "item": [
+        {
+          "name": "General AI Chat",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('AI response received', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('response');",
+                  "    pm.expect(responseJson.data.response).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Hi! I had a great day at school today. I learned about the solar system and I'm really excited about space exploration. Can you tell me something interesting about space?\",\n  \"context\": \"general\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/chatbot/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "chatbot", "chat"]
+            },
+            "description": "General AI chatbot for encouragement, support, and guidance"
+          },
+          "response": []
+        },
+        {
+          "name": "Safety Comic Chat",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Safety comic response received', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('response');",
+                  "    pm.expect(responseJson.data).to.have.property('context');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"I just read the comic about stranger safety. What should I do if someone I don't know offers me candy?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/chatbot/safety-comic-chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "chatbot", "safety-comic-chat"]
+            },
+            "description": "AI chatbot specifically for safety comic discussions"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Encouragement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Encouragement received', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('response');",
+                  "    pm.expect(responseJson.data).to.have.property('context');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/chatbot/encouragement",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "chatbot", "encouragement"]
+            },
+            "description": "Get an encouraging message for the user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get AI Supportive Tips (Parent only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Supportive tips received', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('tip');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entries\": [\n    {\n      \"id\": 1,\n      \"text\": \"Today I felt sad because my friend didn't want to play with me at recess.\",\n      \"mood\": 2,\n      \"date\": \"2024-01-15\"\n    },\n    {\n      \"id\": 2,\n      \"text\": \"I had trouble with my math homework and felt frustrated.\",\n      \"mood\": 2,\n      \"date\": \"2024-01-16\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ai/supportive-tips",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ai", "supportive-tips"]
+            },
+            "description": "Get AI-generated supportive tips based on diary entries (parent only)"
+          },
+          "response": []
+        }
+      ],
+      "description": "AI-powered chatbot and support systems"
+    },
+    {
+      "name": "👨‍👩‍👧‍👦 Parent Dashboard",
+      "item": [
+        {
+          "name": "Get All Linked Children",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Children list retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('children');",
+                  "    pm.expect(responseJson.data.children).to.be.an('array');",
+                  "",
+                  "    if (responseJson.data.children.length > 0) {",
+                  "        pm.environment.set('childId', responseJson.data.children[0].id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/parent/children",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "parent", "children"]
+            },
+            "description": "Get all children linked to a parent"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Child's Diary Entries",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Child diary entries retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('entries');",
+                  "    pm.expect(responseJson.data.entries).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/parent/child/{{childId}}/diary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "parent", "child", "{{childId}}", "diary"]
+            },
+            "description": "Get child's diary entries for the last 7 days"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Child's Skills Usage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Child skills stats retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('skills');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/parent/child/{{childId}}/skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "parent", "child", "{{childId}}", "skills"]
+            },
+            "description": "Get skill usage statistics for a child"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate New Parent Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('New parent code generated', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.have.property('code');",
+                  "",
+                  "    if (responseJson.data.code) {",
+                  "        pm.environment.set('newParentCode', responseJson.data.code);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/parent/generate-code",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "parent", "generate-code"]
+            },
+            "description": "Generate a unique code for parents to link children"
+          },
+          "response": []
+        }
+      ],
+      "description": "Parent dashboard for monitoring children's progress and activities"
+    },
+    {
+      "name": "📚 Life Skills Overview",
+      "item": [
+        {
+          "name": "Get All Life Skills",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Life skills retrieved', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.data).to.be.an('array');",
+                  "    pm.expect(responseJson.data.length).to.be.greaterThan(0);",
+                  "",
+                  "    // Check that each skill has required properties",
+                  "    responseJson.data.forEach(skill => {",
+                  "        pm.expect(skill).to.have.property('title');",
+                  "        pm.expect(skill).to.have.property('description');",
+                  "        pm.expect(skill).to.have.property('image');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "skills"]
+            },
+            "description": "Get all available life skills"
+          },
+          "response": []
+        },
+        {
+          "name": "Track Safety Skills View",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Safety skills view tracked', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/skills/safety/view",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "skills", "safety", "view"]
+            },
+            "description": "Track that user viewed safety skills"
+          },
+          "response": []
+        },
+        {
+          "name": "Track Finance Skills View",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Finance skills view tracked', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/skills/finance/view",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "skills", "finance", "view"]
+            },
+            "description": "Track that user viewed finance skills"
+          },
+          "response": []
+        },
+        {
+          "name": "Track Communication Skills View",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Communication skills view tracked', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/skills/communication/view",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "skills", "communication", "view"]
+            },
+            "description": "Track that user viewed communication skills"
+          },
+          "response": []
+        },
+        {
+          "name": "Track Problem Solving Skills View",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Problem solving skills view tracked', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/skills/problem-solving/view",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "skills", "problem-solving", "view"]
+            },
+            "description": "Track that user viewed problem solving skills"
+          },
+          "response": []
+        }
+      ],
+      "description": "Life skills overview and engagement tracking"
+    },
+    {
+      "name": "⚙️ Admin Content Management",
+      "item": [
+        {
+          "name": "🛡️ Safety Content Admin",
+          "item": [
+            {
+              "name": "Get All Safety Videos (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Admin videos retrieved', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('videos');",
+                      "    pm.expect(responseJson.data.videos).to.be.an('array');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/safety/videos",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "admin", "safety", "videos"]
+                },
+                "description": "Get all safety videos for admin management (requires admin role)"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Safety Video (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Safety video created', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('video_id');",
+                      "",
+                      "    if (responseJson.data.video_id) {",
+                      "        pm.environment.set('newVideoId', responseJson.data.video_id);",
+                      "    }",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Stranger Safety for Kids\",\n  \"description\": \"Learn how to stay safe around strangers\",\n  \"video_url\": \"https://example.com/safety-video.mp4\",\n  \"thumbnail_url\": \"https://example.com/safety-thumb.jpg\",\n  \"skill_type\": \"safety\",\n  \"badge_id\": \"safety_video_badge\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/safety/video",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "admin", "safety", "video"]
+                },
+                "description": "Create a new safety video (requires admin role)"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Safety Video (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Safety video deleted', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('video_id');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/safety/video/{{newVideoId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "admin", "safety", "video", "{{newVideoId}}"]
+                },
+                "description": "Delete a safety video (requires admin role)"
+              },
+              "response": []
+            },
+            {
+              "name": "Add Question to Video (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Question added to video', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('question_id');",
+                      "    pm.expect(responseJson.data).to.have.property('quiz_id');",
+                      "",
+                      "    if (responseJson.data.question_id) {",
+                      "        pm.environment.set('questionId', responseJson.data.question_id);",
+                      "    }",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"question_text\": \"What should you do if a stranger offers you candy?\",\n  \"question_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/safety/video/{{newVideoId}}/question",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "admin", "safety", "video", "{{newVideoId}}", "question"]
+                },
+                "description": "Add a question to a safety video (requires admin role)"
+              },
+              "response": []
+            },
+            {
+              "name": "Add Option to Question (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Option added to question', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('option_id');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"option_text\": \"Say 'No thank you' and walk away\",\n  \"is_correct\": true,\n  \"option_order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/safety/video/question/{{questionId}}/option",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "safety",
+                    "video",
+                    "question",
+                    "{{questionId}}",
+                    "option"
+                  ]
+                },
+                "description": "Add an option to a question (requires admin role)"
+              },
+              "response": []
+            },
+            {
+              "name": "Get All Safety Comics (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Admin comics retrieved', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('comics');",
+                      "    pm.expect(responseJson.data.comics).to.be.an('array');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/safety/comics",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "admin", "safety", "comics"]
+                },
+                "description": "Get all safety comics for admin management (requires admin role)"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Safety Comic (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Safety comic created', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('comic_id');",
+                      "",
+                      "    if (responseJson.data.comic_id) {",
+                      "        pm.environment.set('newComicId', responseJson.data.comic_id);",
+                      "    }",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Internet Safety Adventures\",\n  \"description\": \"Learn how to stay safe online\",\n  \"pdf_url\": \"https://example.com/internet-safety-comic.pdf\",\n  \"thumbnail_url\": \"https://example.com/internet-safety-thumb.jpg\",\n  \"skill_type\": \"safety\",\n  \"badge_id\": \"safety_comic_badge\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/safety/comic",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "admin", "safety", "comic"]
+                },
+                "description": "Create a new safety comic (requires admin role)"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Safety Comic (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Safety comic deleted', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('comic_id');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/safety/comic/{{newComicId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "admin", "safety", "comic", "{{newComicId}}"]
+                },
+                "description": "Delete a safety comic (requires admin role)"
+              },
+              "response": []
+            }
+          ],
+          "description": "Admin endpoints for managing safety content (videos, comics, quizzes)"
+        },
+        {
+          "name": "💰 Finance Content Admin",
+          "item": [
+            {
+              "name": "Get All Finance Videos (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Admin finance videos retrieved', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('videos');",
+                      "    pm.expect(responseJson.data.videos).to.be.an('array');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/finance/videos",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "admin", "finance", "videos"]
+                },
+                "description": "Get all finance videos for admin management (requires admin role)"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Finance Video (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Finance video created', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('video_id');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Saving Money for Kids\",\n  \"description\": \"Learn how to save money for things you want\",\n  \"video_url\": \"https://example.com/finance-video.mp4\",\n  \"thumbnail_url\": \"https://example.com/finance-thumb.jpg\",\n  \"skill_type\": \"finance\",\n  \"badge_id\": \"finance_video_badge\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/finance/video",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "admin", "finance", "video"]
+                },
+                "description": "Create a new finance video (requires admin role)"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Finance Game Levels (Admin)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Finance game levels retrieved', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.expect(responseJson).to.have.property('success');",
+                      "    pm.expect(responseJson.data).to.have.property('levels');",
+                      "    pm.expect(responseJson.data.levels).to.be.an('array');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/admin/finance/levels",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "admin", "finance", "levels"]
+                },
+                "description": "Get all finance game levels for admin management (requires admin role)"
+              },
+              "response": []
+            }
+          ],
+          "description": "Admin endpoints for managing finance content (videos, games, levels)"
+        }
+      ],
+      "description": "Admin-only endpoints for content management and system administration"
+    },
+    {
+      "name": "🧪 Error Testing & Edge Cases",
+      "item": [
+        {
+          "name": "Unauthorized Access Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error response format', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson).to.have.property('errors');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Test unauthorized access (no token)"
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid Route Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('404 error response format', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson).to.have.property('errors');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nonexistent-endpoint",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "nonexistent-endpoint"]
+            },
+            "description": "Test 404 error handling for non-existent routes"
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid JSON Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 422', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "",
+                  "pm.test('Validation error response format', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ invalid json }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/complete-registration",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "complete-registration"]
+            },
+            "description": "Test handling of invalid JSON input"
+          },
+          "response": []
+        },
+        {
+          "name": "Missing Required Fields Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 422', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "",
+                  "pm.test('Validation error for missing fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson).to.have.property('errors');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"test_user\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/complete-registration",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "complete-registration"]
+            },
+            "description": "Test validation error handling for missing required fields"
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid Token Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Invalid token error response', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "invalid.jwt.token",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Test handling of invalid JWT token"
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Role Required Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Admin access denied', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.message).to.include('Admin');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/safety/videos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "safety", "videos"]
+            },
+            "description": "Test admin access control (non-admin user trying to access admin endpoint)"
+          },
+          "response": []
+        },
+        {
+          "name": "Parent Role Required Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Parent access denied', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success');",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.message).to.include('parent');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entries\": [\n    {\n      \"id\": 1,\n      \"text\": \"Test entry\",\n      \"mood\": 3,\n      \"date\": \"2024-01-15\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ai/supportive-tips",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ai", "supportive-tips"]
+            },
+            "description": "Test parent access control (non-parent user trying to access parent-only endpoint)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Comprehensive error testing and edge case validation"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{firebaseIdToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script for logging and setup",
+          "console.log('Making request to:', pm.request.url.toString());",
+          "console.log('Method:', pm.request.method);",
+          "",
+          "// Check if authentication is required",
+          "const url = pm.request.url.toString();",
+          "const publicEndpoints = ['/health', '/', '/api/v1/auth/complete-registration', '/api/v1/auth/verify'];",
+          "const isPublicEndpoint = publicEndpoints.some(endpoint => url.includes(endpoint));",
+          "",
+          "if (!isPublicEndpoint && pm.request.auth && pm.request.auth.type === 'bearer') {",
+          "    const token = pm.environment.get('firebaseIdToken');",
+          "    if (!token) {",
+          "        console.warn('No Firebase ID token found in environment. Some requests may fail.');",
+          "    }",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script for common validations",
+          "",
+          "// Log response basics",
+          "console.log('Response Status:', pm.response.code);",
+          "console.log('Response Time:', pm.response.responseTime + 'ms');",
+          "",
+          "// Common validations for all endpoints",
+          "if (pm.response.code >= 200 && pm.response.code < 300) {",
+          "    pm.test('Response time is acceptable', function () {",
+          "        pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "    });",
+          "    ",
+          "    pm.test('Response has Content-Type header', function () {",
+          "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+          "    });",
+          "    ",
+          "    pm.test('Response follows UniformResponse format', function () {",
+          "        const responseJson = pm.response.json();",
+          "        pm.expect(responseJson).to.have.property('success');",
+          "        pm.expect(responseJson).to.have.property('message');",
+          "        ",
+          "        if (responseJson.success) {",
+          "            pm.expect(responseJson).to.have.property('data');",
+          "        } else {",
+          "            pm.expect(responseJson).to.have.property('errors');",
+          "        }",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "firebaseIdToken",
+      "value": "",
+      "type": "string",
+      "description": "Firebase ID token for parent user authentication"
+    },
+    {
+      "key": "childFirebaseToken",
+      "value": "",
+      "type": "string",
+      "description": "Firebase ID token for child user authentication"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string",
+      "description": "Current user ID (automatically set during registration)"
+    },
+    {
+      "key": "childUserId",
+      "value": "",
+      "type": "string",
+      "description": "Child user ID (automatically set during child registration)"
+    },
+    {
+      "key": "childId",
+      "value": "",
+      "type": "string",
+      "description": "Child ID for parent dashboard operations"
+    },
+    {
+      "key": "parentCode",
+      "value": "",
+      "type": "string",
+      "description": "Parent code for child registration (automatically set when generated)"
+    },
+    {
+      "key": "newParentCode",
+      "value": "",
+      "type": "string",
+      "description": "Newly generated parent code"
+    },
+    {
+      "key": "videoId",
+      "value": "",
+      "type": "string",
+      "description": "Safety video ID (automatically set when videos are retrieved)"
+    },
+    {
+      "key": "comicId",
+      "value": "",
+      "type": "string",
+      "description": "Safety comic ID (automatically set when comics are retrieved)"
+    },
+    {
+      "key": "financeVideoId",
+      "value": "",
+      "type": "string",
+      "description": "Finance video ID (automatically set when finance videos are retrieved)"
+    },
+    {
+      "key": "questionId",
+      "value": "",
+      "type": "string",
+      "description": "Question ID (automatically set when questions are created)"
+    },
+    {
+      "key": "diaryEntryId",
+      "value": "",
+      "type": "string",
+      "description": "Diary entry ID (automatically set when diary entries are saved)"
+    },
+    {
+      "key": "newVideoId",
+      "value": "",
+      "type": "string",
+      "description": "Newly created video ID (set by admin video creation)"
+    },
+    {
+      "key": "newComicId",
+      "value": "",
+      "type": "string",
+      "description": "Newly created comic ID (set by admin comic creation)"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+    "name": "frontend",
+    "version": "0.0.0",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@lossendae/vue-avatar": "^0.1.5",
+        "@tailwindcss/forms": "^0.5.10",
+        "@tailwindcss/typography": "^0.5.16",
+        "@tresjs/core": "^4.3.6",
+        "@vapi-ai/web": "2.3.9",
+        "@vueuse/core": "^13.5.0",
+        "@vueuse/motion": "^3.0.3",
+        "chart.js": "^4.5.0",
+        "firebase": "^11.10.0",
+        "pdfjs-dist": "^4.8.69",
+        "pinia": "^3.0.3",
+        "recharts": "^3.1.2",
+        "three": "^0.177.0",
+        "vue": "^3.4.0",
+        "vue-chartjs": "^5.3.2",
+        "vue-pdf": "^4.3.0",
+        "vue-router": "^4.2.5",
+        "vue3-avatar": "^3.1.0",
+        "vue3-pdf-app": "^1.0.3"
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^28.0.6",
+        "@vitejs/plugin-vue": "^5.0.4",
+        "autoprefixer": "^10.4.17",
+        "postcss": "^8.4.35",
+        "tailwindcss": "^3.4.3",
+        "vite": "^6.3.5"
+    }
+}

@@ -1,0 +1,2475 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+The content has been processed where empty lines have been removed.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: migrations, .env, alembic.ini, *.db, README.md, certs, .gitignore, assets, repomix.config.json, tests, .pre-commit-config.yaml, uv.lock, .python-version, nohup.out, run.bat, run.sh, config.json, requirements.txt
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Empty lines have been removed from all files
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+app/
+  api/
+    dependencies/
+      auth.py
+    v1/
+      auth.py
+      router.py
+      users.py
+  config/
+    firebase.py
+    logging.py
+    settings.py
+  models/
+    auth.py
+    base.py
+    user.py
+  schemas/
+    auth.py
+    base.py
+    user.py
+  services/
+    auth.py
+    firebase.py
+    user.py
+  utils/
+    exceptions.py
+    pagination.py
+    security.py
+  main.py
+pyproject.toml
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app/api/v1/router.py">
+# app/api/v1/router.py
+from fastapi import APIRouter
+from app.api.v1.auth import router as auth_router
+from app.api.v1.users import router as users_router
+api_router = APIRouter(prefix="/api/v1")
+api_router.include_router(auth_router)
+api_router.include_router(users_router)
+</file>
+
+<file path="app/config/logging.py">
+# app/config/logging.py
+import sys
+from loguru import logger
+from app.config.settings import settings
+def configure_logging():
+    """Configure Loguru for console logging"""
+    # Remove default handler
+    logger.remove()
+    # Determine log level based on environment
+    log_level = "DEBUG" if settings.debug else "INFO"
+    # Console logging with nice formatting
+    logger.add(
+        sys.stdout,
+        level=log_level,
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+        "<level>{message}</level>",
+        colorize=True,
+        backtrace=True,
+        diagnose=True,
+    )
+    # Log startup message
+    logger.info(f"Logging configured - Level: {log_level}")
+    return logger
+# Create the configured logger instance
+log = configure_logging()
+</file>
+
+<file path="app/config/settings.py">
+# app/config/settings.py
+from pydantic_settings import BaseSettings
+class Settings(BaseSettings):
+    # App Configuration
+    app_name: str = "Life Skills App"
+    debug: bool = False
+    environment: str = "development"
+    # Security
+    secret_key: str
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    # Firebase Configuration
+    firebase_project_id: str
+    firebase_private_key_id: str
+    firebase_private_key: str
+    firebase_client_email: str
+    firebase_client_id: str
+    firebase_auth_uri: str = "https://accounts.google.com/o/oauth2/auth"
+    firebase_token_uri: str = "https://oauth2.googleapis.com/token"
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
+settings = Settings()
+</file>
+
+<file path="app/models/auth.py">
+from datetime import datetime
+from pydantic import BaseModel
+class RefreshToken(BaseModel):
+    token: str
+    user_id: str
+    expires_at: datetime
+    is_revoked: bool = False
+    created_at: datetime
+class PasswordReset(BaseModel):
+    email: str
+    token: str
+    expires_at: datetime
+    used: bool = False
+    created_at: datetime
+</file>
+
+<file path="app/schemas/user.py">
+# app/schemas/user.py
+from datetime import date, datetime
+from pydantic import BaseModel, EmailStr
+from app.models.base import UserRole
+class UserBase(BaseModel):
+    email: EmailStr
+    username: str
+    first_name: str
+    last_name: str
+    role: UserRole
+class UserCreate(UserBase):
+    password: str
+    age: int | None = None
+    grade_level: str | None = None
+    parent_code: str | None = None
+class UserUpdate(BaseModel):
+    username: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    age: int | None = None
+    grade_level: str | None = None
+    avatar_url: str | None = None
+    preferences: dict | None = None
+class UserResponse(UserBase):
+    id: str
+    is_active: bool
+    is_verified: bool
+    age: int | None = None
+    date_of_birth: date | None = None
+    grade_level: str | None = None
+    parent_id: str | None = None
+    children_ids: list[str] | None = []
+    avatar_url: str | None = None
+    current_skills: list[str] | None = []
+    completed_skills: list[str] | None = []
+    points: int = 0
+    badges: list[str] | None = []
+    last_login: datetime | None = None
+    created_at: datetime | None = None
+class ParentCode(BaseModel):
+    code: str
+    expires_at: datetime
+</file>
+
+<file path="app/api/dependencies/auth.py">
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from app.config.logging import log
+from app.models.base import UserRole
+from app.models.user import User
+from app.services.user import UserService
+from app.utils.exceptions import AuthenticationError
+from app.utils.security import verify_token
+security = HTTPBearer()
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> User:
+    """Get current authenticated user"""
+    log.debug("Authenticating user from token")
+    token_data = verify_token(credentials.credentials)
+    if not token_data:
+        log.warning("Invalid authentication token provided")
+        raise AuthenticationError("Invalid authentication token")
+    user_service = UserService()
+    try:
+        user = await user_service.get_user_by_id(token_data.user_id)
+        if not user.is_active:
+            log.warning(f"Inactive user attempted access: {user.id}")
+            raise AuthenticationError("Account is deactivated")
+        log.debug(f"User authenticated successfully: {user.id}")
+        return user
+    except Exception as e:
+        log.error(f"User authentication failed: {str(e)}")
+        raise AuthenticationError("User not found")
+async def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Get current active user"""
+    if not current_user.is_active:
+        log.warning(f"Inactive user attempted access: {current_user.id}")
+        raise AuthenticationError("Inactive user")
+    log.debug(f"Active user verified: {current_user.id}")
+    return current_user
+async def get_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
+    """Require admin role"""
+    log.debug(
+        f"Checking admin access for user: {current_user.id}, role: {current_user.role}"
+    )
+    if current_user.role != UserRole.ADMIN:
+        log.warning(f"Non-admin user attempted admin access: {current_user.id}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
+        )
+    log.debug(f"Admin access granted to user: {current_user.id}")
+    return current_user
+async def get_parent_user(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Require parent role"""
+    log.debug(
+        f"Checking parent access for user: {current_user.id}, role: {current_user.role}"
+    )
+    if current_user.role not in [UserRole.PARENT, UserRole.ADMIN]:
+        log.warning(f"Non-parent user attempted parent access: {current_user.id}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Parent access required"
+        )
+    log.debug(f"Parent access granted to user: {current_user.id}")
+    return current_user
+</file>
+
+<file path="app/models/base.py">
+from datetime import datetime
+from enum import Enum
+from pydantic import BaseModel
+class UserRole(str, Enum):
+    USER = "user"  # Children (8-14)
+    PARENT = "parent"  # Parents/Guardians
+    ADMIN = "admin"  # System administrators
+class BaseDocument(BaseModel):
+    id: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    class Config:
+        from_attributes = True
+        extra = "forbid"
+        exclude_none = True
+        json_encoders = {datetime: lambda v: v.isoformat()}
+</file>
+
+<file path="app/models/user.py">
+from datetime import date, datetime
+from app.models.base import BaseDocument, UserRole
+class User(BaseDocument):
+    # Basic Information
+    email: str
+    firebase_uid: str
+    username: str
+    first_name: str
+    last_name: str
+    password_hash: str | None = None
+    # Role and Status
+    role: UserRole = UserRole.USER
+    is_active: bool = True
+    is_verified: bool = False
+    # Child-specific fields (for USER role)
+    age: int | None = None
+    date_of_birth: date | None = None
+    grade_level: str | None = None
+    # Parent-child relationship
+    parent_id: str | None = None  # For children
+    children_ids: list[str] | None = []  # For parents
+    # Profile Information
+    avatar_url: str | None = None
+    preferences: dict | None = {}
+    # App-specific fields
+    current_skills: list[str] | None = []  # Skills currently learning
+    completed_skills: list[str] | None = []  # Skills completed
+    points: int = 0
+    badges: list[str] | None = []
+    # Emergency contacts (for children)
+    emergency_contacts: list[dict] | None = []
+    # Last activity
+    last_login: datetime | None = None
+    last_activity: datetime | None = None
+</file>
+
+<file path="app/schemas/base.py">
+# app/schemas/base.py
+from typing import Any, Generic, TypeVar
+from pydantic import BaseModel, Field
+class Base(BaseModel):
+    class Config:
+        extra = "forbid"
+        from_attributes = True
+        exclude_none = True
+class PaginationParams(BaseModel):
+    skip: int | None = Field(None, ge=0, description="Number of items to skip")
+    limit: int | None = Field(
+        None, ge=1, le=100, description="Maximum number of items to return"
+    )
+T = TypeVar("T")
+class UniformResponse(BaseModel, Generic[T]):
+    """Standardized API response format"""
+    success: bool = Field(description="Whether the request was successful")
+    message: str = Field(description="Human-readable message about the operation")
+    data: T | None = Field(default=None, description="Response data payload")
+    errors: list[str] | None = Field(default=None, description="List of error messages")
+    meta: dict[str, Any] | None = Field(default=None, description="Additional metadata")
+    @classmethod
+    def success_response(
+        cls,
+        message: str = "Operation completed successfully",
+        data: T | None = None,
+        meta: dict[str, Any] | None = None,
+    ) -> "UniformResponse[T]":
+        """Create a successful response"""
+        return cls(success=True, message=message, data=data, errors=None, meta=meta)
+    @classmethod
+    def error_response(
+        cls,
+        message: str = "Operation failed",
+        errors: list[str] | None = None,
+        meta: dict[str, Any] | None = None,
+    ) -> "UniformResponse[None]":
+        """Create an error response"""
+        return cls(
+            success=False, message=message, data=None, errors=errors or [], meta=meta
+        )
+class PaginatedResponse(BaseModel, Generic[T]):
+    """Standardized paginated response format"""
+    success: bool = Field(description="Whether the request was successful")
+    message: str = Field(description="Human-readable message about the operation")
+    data: list[T] = Field(
+        default_factory=list, description="List of response data items"
+    )
+    pagination: dict[str, Any] = Field(description="Pagination metadata")
+    errors: list[str] | None = Field(default=None, description="List of error messages")
+    @classmethod
+    def success_response(
+        cls,
+        data: list[T],
+        total_count: int,
+        page: int = 1,
+        page_size: int = 20,
+        message: str = "Data retrieved successfully",
+    ) -> "PaginatedResponse[T]":
+        """Create a successful paginated response"""
+        total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 1
+        return cls(
+            success=True,
+            message=message,
+            data=data,
+            pagination={
+                "total_count": total_count,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_previous": page > 1,
+            },
+            errors=None,
+        )
+    @classmethod
+    def error_response(
+        cls, message: str = "Failed to retrieve data", errors: list[str] | None = None
+    ) -> "PaginatedResponse[T]":
+        """Create an error paginated response"""
+        return cls(
+            success=False,
+            message=message,
+            data=[],
+            pagination={
+                "total_count": 0,
+                "page": 1,
+                "page_size": 0,
+                "total_pages": 0,
+                "has_next": False,
+                "has_previous": False,
+            },
+            errors=errors or [],
+        )
+</file>
+
+<file path="app/services/user.py">
+# app/services/user.py
+from typing import Any
+from app.config.logging import log
+from app.models.base import UserRole
+from app.models.user import User
+from app.schemas.user import UserUpdate
+from app.services.firebase import FirebaseService
+from app.utils.exceptions import AuthorizationError, NotFoundError
+class UserService:
+    def __init__(self):
+        self.firebase_service = FirebaseService()
+        log.debug("UserService initialized")
+    async def get_user_by_id(self, user_id: str) -> User | None:
+        """Get user by ID"""
+        log.debug(f"Fetching user by ID: {user_id}")
+        user_doc = await self.firebase_service.get_document("users", user_id)
+        if not user_doc:
+            log.warning(f"User not found: {user_id}")
+            raise NotFoundError("User not found")
+        log.debug(f"User retrieved successfully: {user_id}")
+        return User(**user_doc)
+    async def get_user_profile(
+        self, user_id: str, requesting_user_id: str, requesting_user_role: UserRole
+    ) -> User:
+        """Get user profile with authorization check"""
+        log.info(
+            f"Profile access request - Target: {user_id}, Requester: {requesting_user_id}, Role: {requesting_user_role}"
+        )
+        user = await self.get_user_by_id(user_id)
+        # Authorization checks
+        if requesting_user_id == user_id:
+            # Users can always view their own profile
+            log.debug("Self-profile access granted")
+            return user
+        elif requesting_user_role == UserRole.ADMIN:
+            # Admins can view any profile
+            log.debug("Admin profile access granted")
+            return user
+        elif requesting_user_role == UserRole.PARENT:
+            # Parents can view their children's profiles
+            children = await self._get_user_children(requesting_user_id)
+            if user_id in children:
+                log.debug("Parent-child profile access granted")
+                return user
+            else:
+                log.warning(
+                    f"Unauthorized profile access attempt - Parent {requesting_user_id} trying to access {user_id}"
+                )
+                raise AuthorizationError("Not authorized to view this profile")
+        else:
+            log.warning(
+                f"Unauthorized profile access attempt - User {requesting_user_id} trying to access {user_id}"
+            )
+            raise AuthorizationError("Not authorized to view this profile")
+    async def update_user_profile(
+        self,
+        user_id: str,
+        update_data: UserUpdate,
+        requesting_user_id: str,
+        requesting_user_role: UserRole,
+    ) -> User:
+        """Update user profile with authorization check"""
+        log.info(
+            f"Profile update request - Target: {user_id}, Requester: {requesting_user_id}, Role: {requesting_user_role}"
+        )
+        # Authorization check
+        if requesting_user_id != user_id and requesting_user_role != UserRole.ADMIN:
+            if requesting_user_role == UserRole.PARENT:
+                children = await self._get_user_children(requesting_user_id)
+                if user_id not in children:
+                    log.warning(
+                        f"Unauthorized profile update attempt - Parent {requesting_user_id} trying to update {user_id}"
+                    )
+                    raise AuthorizationError("Not authorized to update this profile")
+            else:
+                log.warning(
+                    f"Unauthorized profile update attempt - User {requesting_user_id} trying to update {user_id}"
+                )
+                raise AuthorizationError("Not authorized to update this profile")
+        # Prepare update data
+        update_dict = update_data.dict(exclude_unset=True)
+        log.debug(
+            f"Updating profile for user {user_id} with data: {list(update_dict.keys())}"
+        )
+        # Update user document
+        await self.firebase_service.update_document("users", user_id, update_dict)
+        log.success(f"Profile updated successfully for user: {user_id}")
+        # Return updated user
+        return await self.get_user_by_id(user_id)
+    async def get_user_children(self, parent_id: str) -> list[User]:
+        """Get all children for a parent"""
+        log.info(f"Fetching children for parent: {parent_id}")
+        parent_doc = await self.firebase_service.get_document("users", parent_id)
+        if not parent_doc:
+            log.error(f"Parent not found: {parent_id}")
+            raise NotFoundError("Parent not found")
+        children_ids = parent_doc.get("children_ids", [])
+        log.debug(f"Found {len(children_ids)} children IDs for parent {parent_id}")
+        children = []
+        for child_id in children_ids:
+            try:
+                child = await self.get_user_by_id(child_id)
+                children.append(child)
+                log.debug(f"Child loaded successfully: {child_id}")
+            except NotFoundError:
+                # Child document not found, skip
+                log.warning(f"Child document not found, skipping: {child_id}")
+                continue
+        log.success(f"Retrieved {len(children)} children for parent {parent_id}")
+        return children
+    async def add_emergency_contact(
+        self,
+        user_id: str,
+        contact_info: dict[str, Any],
+        requesting_user_id: str,
+        requesting_user_role: UserRole,
+    ) -> User:
+        """Add emergency contact for a user"""
+        log.info(
+            f"Adding emergency contact for user: {user_id}, Requester: {requesting_user_id}"
+        )
+        # Authorization check
+        if requesting_user_id != user_id and requesting_user_role != UserRole.ADMIN:
+            if requesting_user_role == UserRole.PARENT:
+                children = await self._get_user_children(requesting_user_id)
+                if user_id not in children:
+                    log.warning(
+                        f"Unauthorized emergency contact addition - Parent {requesting_user_id} trying to modify {user_id}"
+                    )
+                    raise AuthorizationError("Not authorized to add emergency contacts")
+            else:
+                log.warning(
+                    f"Unauthorized emergency contact addition - User {requesting_user_id} trying to modify {user_id}"
+                )
+                raise AuthorizationError("Not authorized to add emergency contacts")
+        user_doc = await self.firebase_service.get_document("users", user_id)
+        if not user_doc:
+            log.error(f"User not found for emergency contact addition: {user_id}")
+            raise NotFoundError("User not found")
+        emergency_contacts = user_doc.get("emergency_contacts", [])
+        emergency_contacts.append(contact_info)
+        await self.firebase_service.update_document(
+            "users", user_id, {"emergency_contacts": emergency_contacts}
+        )
+        log.success(f"Emergency contact added successfully for user: {user_id}")
+        return await self.get_user_by_id(user_id)
+    async def update_user_points(self, user_id: str, points_to_add: int) -> User:
+        """Update user points (for skill completion, etc.)"""
+        log.info(f"Updating points for user {user_id}: {points_to_add:+d} points")
+        user_doc = await self.firebase_service.get_document("users", user_id)
+        if not user_doc:
+            log.error(f"User not found for points update: {user_id}")
+            raise NotFoundError("User not found")
+        current_points = user_doc.get("points", 0)
+        new_points = current_points + points_to_add
+        await self.firebase_service.update_document(
+            "users", user_id, {"points": new_points}
+        )
+        log.success(
+            f"Points updated for user {user_id}: {current_points} -> {new_points}"
+        )
+        return await self.get_user_by_id(user_id)
+    async def add_user_badge(self, user_id: str, badge: str) -> User:
+        """Add a badge to user"""
+        log.info(f"Adding badge '{badge}' to user: {user_id}")
+        user_doc = await self.firebase_service.get_document("users", user_id)
+        if not user_doc:
+            log.error(f"User not found for badge addition: {user_id}")
+            raise NotFoundError("User not found")
+        badges = user_doc.get("badges", [])
+        if badge not in badges:
+            badges.append(badge)
+            await self.firebase_service.update_document(
+                "users", user_id, {"badges": badges}
+            )
+            log.success(f"Badge '{badge}' added to user: {user_id}")
+        else:
+            log.warning(f"Badge '{badge}' already exists for user: {user_id}")
+        return await self.get_user_by_id(user_id)
+    async def _get_user_children(self, parent_id: str) -> list[str]:
+        """Get list of children IDs for a parent"""
+        log.debug(f"Getting children IDs for parent: {parent_id}")
+        parent_doc = await self.firebase_service.get_document("users", parent_id)
+        children_ids = parent_doc.get("children_ids", []) if parent_doc else []
+        log.debug(f"Found {len(children_ids)} children for parent {parent_id}")
+        return children_ids
+</file>
+
+<file path="app/utils/pagination.py">
+# app/utils/pagination.py
+from datetime import datetime, timezone
+from typing import Any, Callable, TypeVar
+from app.config.logging import log
+from app.schemas.base import PaginatedResponse, PaginationParams
+from app.services.firebase import FirebaseService
+T = TypeVar("T")
+class LifeSkillsPaginator:
+    """Enhanced paginator specifically designed for Life Skills App"""
+    def __init__(self, firebase_service: FirebaseService):
+        self.firebase_service = firebase_service
+        log.debug("LifeSkillsPaginator initialized")
+    async def paginate_collection(
+        self,
+        collection: str,
+        pagination: PaginationParams,
+        order_by: str = "created_at",
+        order_direction: str = "desc",
+        filters: list[tuple[str, str, Any]] | None = None,
+        transform_func: Callable[[dict], T] | None = None,
+        include_metadata: bool = True,
+    ) -> PaginatedResponse[T]:
+        """
+        Paginate Firebase collection with enhanced features for Life Skills App
+        Args:
+            collection: Firestore collection name
+            pagination: Pagination parameters
+            order_by: Field to order by
+            order_direction: 'asc' or 'desc'
+            filters: List of (field, operator, value) tuples
+            transform_func: Function to transform each document
+            include_metadata: Whether to include pagination metadata
+        """
+        log.info(f"Paginating collection: {collection}")
+        try:
+            # Set defaults
+            skip = pagination.skip or 0
+            limit = pagination.limit or 20
+            # Get total count (for small collections only)
+            total_count = await self._get_efficient_count(collection, filters)
+            # Build and execute query
+            documents = await self._execute_paginated_query(
+                collection, skip, limit, order_by, order_direction, filters
+            )
+            # Transform documents if function provided
+            if transform_func:
+                transformed_data = [transform_func(doc) for doc in documents]
+            else:
+                transformed_data = documents
+            # Calculate pagination info
+            page = (skip // limit) + 1 if limit > 0 else 1
+            # Create response
+            response = PaginatedResponse.success_response(
+                data=transformed_data,
+                total_count=total_count,
+                page=page,
+                page_size=limit,
+                message=f"Retrieved {len(transformed_data)} items from {collection}",
+            )
+            # Add metadata if requested
+            if include_metadata:
+                response.pagination.update(
+                    {
+                        "collection": collection,
+                        "order_by": order_by,
+                        "order_direction": order_direction,
+                        "filters_applied": len(filters) if filters else 0,
+                        "query_timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+            log.success(f"Pagination completed: {len(transformed_data)} items returned")
+            return response
+        except Exception as e:
+            log.error(f"Pagination failed for collection {collection}: {str(e)}")
+            return PaginatedResponse.error_response(
+                message=f"Failed to paginate {collection}", errors=[str(e)]
+            )
+    async def paginate_user_children(
+        self,
+        parent_id: str,
+        pagination: PaginationParams,
+        include_inactive: bool = False,
+        order_by: str = "created_at",
+    ) -> PaginatedResponse[dict]:
+        """Specialized pagination for user children"""
+        log.info(f"Paginating children for parent: {parent_id}")
+        # Get parent document to access children_ids
+        parent_doc = await self.firebase_service.get_document("users", parent_id)
+        if not parent_doc:
+            return PaginatedResponse.error_response(
+                message="Parent not found", errors=["Invalid parent ID"]
+            )
+        children_ids = parent_doc.get("children_ids", [])
+        if not children_ids:
+            return PaginatedResponse.success_response(
+                data=[], total_count=0, page=1, page_size=0, message="No children found"
+            )
+        # Get children documents
+        children = []
+        for child_id in children_ids:
+            try:
+                child_doc = await self.firebase_service.get_document("users", child_id)
+                if child_doc:
+                    if include_inactive or child_doc.get("is_active", True):
+                        children.append(child_doc)
+            except Exception as e:
+                log.warning(f"Failed to load child {child_id}: {str(e)}")
+                continue
+        # Apply pagination
+        skip = pagination.skip or 0
+        limit = pagination.limit or len(children)
+        paginated_children = children[skip : skip + limit]
+        page = (skip // limit) + 1 if limit > 0 else 1
+        return PaginatedResponse.success_response(
+            data=paginated_children,
+            total_count=len(children),
+            page=page,
+            page_size=len(paginated_children),
+            message=f"Retrieved {len(paginated_children)} children",
+        )
+    async def paginate_user_activities(
+        self,
+        user_id: str,
+        pagination: PaginationParams,
+        activity_type: str | None = None,
+        date_range: tuple[datetime, datetime] | None = None,
+    ) -> PaginatedResponse[dict]:
+        """Specialized pagination for user activities/progress"""
+        log.info(f"Paginating activities for user: {user_id}")
+        # Build filters
+        filters = [("user_id", "==", user_id)]
+        if activity_type:
+            filters.append(("type", "==", activity_type))
+        if date_range:
+            start_date, end_date = date_range
+            filters.extend(
+                [("created_at", ">=", start_date), ("created_at", "<=", end_date)]
+            )
+        return await self.paginate_collection(
+            collection="activities",
+            pagination=pagination,
+            order_by="created_at",
+            order_direction="desc",
+            filters=filters,
+        )
+    async def _execute_paginated_query(
+        self,
+        collection: str,
+        skip: int,
+        limit: int,
+        order_by: str,
+        order_direction: str,
+        filters: list[tuple[str, str, Any]] | None = None,
+    ) -> list[dict]:
+        """Execute paginated query against Firestore"""
+        await self.firebase_service._ensure_client()
+        # Build query
+        query = self.firebase_service.db.collection(collection)
+        # Apply filters
+        if filters:
+            for field, operator, value in filters:
+                query = query.where(field, operator, value)
+        # Apply ordering
+        if order_direction.lower() == "desc":
+            query = query.order_by(order_by, direction="DESCENDING")
+        else:
+            query = query.order_by(order_by, direction="ASCENDING")
+        # Apply pagination
+        # For large offsets, consider using cursor-based pagination
+        query = query.limit(skip + limit) if skip > 0 else query.limit(limit)
+        # Execute query
+        docs = []
+        async for doc in query.stream():
+            data = doc.to_dict()
+            data["id"] = doc.id
+            docs.append(data)
+        # Apply skip manually (not ideal for large datasets)
+        if skip > 0:
+            docs = docs[skip:]
+        return docs
+    async def _get_efficient_count(
+        self,
+        collection: str,
+        filters: list[tuple[str, str, Any]] | None = None,
+        max_count_threshold: int = 1000,
+    ) -> int:
+        """
+        Get document count efficiently, with safeguards for large collections
+        """
+        try:
+            await self.firebase_service._ensure_client()
+            # Build query for counting
+            query = self.firebase_service.db.collection(collection)
+            if filters:
+                for field, operator, value in filters:
+                    query = query.where(field, operator, value)
+            # Limit count query to prevent performance issues
+            query = query.limit(max_count_threshold + 1)
+            count = 0
+            async for _ in query.stream():
+                count += 1
+                if count > max_count_threshold:
+                    log.warning(f"Collection {collection} exceeds count threshold")
+                    return count  # Return approximate count
+            return count
+        except Exception as e:
+            log.error(f"Failed to count documents in {collection}: {str(e)}")
+            return 0
+class CursorPaginator:
+    """Cursor-based pagination for better performance on large datasets"""
+    def __init__(self, firebase_service: FirebaseService):
+        self.firebase_service = firebase_service
+    async def paginate_with_cursor(
+        self,
+        collection: str,
+        limit: int = 20,
+        cursor: str | None = None,
+        order_by: str = "created_at",
+        filters: list[tuple[str, str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Cursor-based pagination for large collections
+        Returns: {data: [], next_cursor: str, has_more: bool}
+        """
+        await self.firebase_service._ensure_client()
+        query = self.firebase_service.db.collection(collection)
+        # Apply filters
+        if filters:
+            for field, operator, value in filters:
+                query = query.where(field, operator, value)
+        # Apply ordering
+        query = query.order_by(order_by)
+        # Apply cursor if provided
+        if cursor:
+            # Decode cursor (in real implementation, you'd decode a secure cursor)
+            cursor_doc = await self.firebase_service.get_document(collection, cursor)
+            if cursor_doc:
+                query = query.start_after(cursor_doc)
+        # Fetch one extra document to determine if there are more
+        query = query.limit(limit + 1)
+        docs = []
+        async for doc in query.stream():
+            data = doc.to_dict()
+            data["id"] = doc.id
+            docs.append(data)
+        # Check if there are more documents
+        has_more = len(docs) > limit
+        if has_more:
+            docs = docs[:-1]  # Remove the extra document
+        # Generate next cursor
+        next_cursor = docs[-1]["id"] if docs and has_more else None
+        return {
+            "data": docs,
+            "next_cursor": next_cursor,
+            "has_more": has_more,
+            "page_size": len(docs),
+        }
+</file>
+
+<file path="app/utils/security.py">
+# app/utils/security.py
+import secrets
+from datetime import datetime, timedelta, timezone
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from app.config.settings import settings
+from app.schemas.auth import TokenData
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain password against its hash"""
+    return pwd_context.verify(plain_password, hashed_password)
+def get_password_hash(password: str) -> str:
+    """Hash a password"""
+    return pwd_context.hash(password)
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """Create a JWT access token"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.access_token_expire_minutes
+        )
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(
+        to_encode, settings.secret_key, algorithm=settings.algorithm
+    )
+    return encoded_jwt
+def create_refresh_token(data: dict) -> str:
+    """Create a JWT refresh token (longer expiry)"""
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(
+        days=30
+    )  # 30 days for refresh token
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(
+        to_encode, settings.secret_key, algorithm=settings.algorithm
+    )
+    return encoded_jwt
+def verify_token(token: str) -> TokenData | None:
+    """Verify and decode a JWT token"""
+    try:
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.algorithm]
+        )
+        email: str = payload.get("sub")
+        user_id: str = payload.get("user_id")
+        role: str = payload.get("role")
+        if email is None or user_id is None:
+            return None
+        token_data = TokenData(email=email, user_id=user_id, role=role)
+        return token_data
+    except JWTError:
+        return None
+def generate_reset_token() -> str:
+    """Generate a secure random token for password reset"""
+    return secrets.token_urlsafe(32)
+</file>
+
+<file path="pyproject.toml">
+[project]
+name = "soft-engg-project-may-2025-se-may-10"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.12",
+    "firebase-admin>=6.9.0",
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "passlib[bcrypt]>=1.7.4",
+    "pydantic-settings>=2.9.1",
+    "pydantic[email]>=2.11.5",
+    "python-jose[cryptography]>=3.5.0",
+    "uvicorn>=0.34.3",
+]
+
+[dependency-groups]
+dev = ["pre-commit>=4.2.0", "ruff>=0.11.13"]
+
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+# Enable Pyflakes 'F' and 'E' codes by default
+select = ["E", "F", "I", "N", "W", "B", "A", "C4", "SIM", "ERA"]
+ignore = [
+    "B008",   # Do not perform function calls in argument defaults
+    "B904",   # Within an except clause, raise exceptions with raise ... from err
+    "E501",   # Line too long
+    "ERA001", # Found commented-out code
+    "N805",   # First argument of a method should be named 'self'
+    "N806",   # Variable in function should be lowercase
+    "SIM102", # Use a single if statement instead of nested if statements
+    "SIM117", # Use multiple context managers in a single with statement
+    "SIM118", # Use 'key in dict' instead of 'key in dict.keys()'
+]
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+flake8-tidy-imports.ban-relative-imports = "all"
+
+[tool.ruff.lint.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+combine-as-imports = true
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+split-on-trailing-comma = true
+
+
+[tool.ruff.format]
+quote-style = "double" # Use double quotes for strings
+indent-style = "space" # Use spaces for indentation
+line-ending = "lf"     # Use Unix-style line endings
+</file>
+
+<file path="app/api/v1/users.py">
+# app/api/v1/users.py
+from fastapi import APIRouter, Depends, Query
+from app.api.dependencies.auth import (
+    get_admin_user,
+    get_current_active_user,
+    get_parent_user,
+)
+from app.config.logging import log
+from app.models.user import User
+from app.schemas.base import PaginatedResponse, UniformResponse
+from app.schemas.user import UserResponse, UserUpdate
+from app.services.user import UserService
+router = APIRouter(prefix="/users", tags=["Users"])
+user_service = UserService()
+@router.get("/profile/{user_id}", response_model=UniformResponse[dict])
+async def get_user_profile(
+    user_id: str, current_user: User = Depends(get_current_active_user)
+):
+    """Get user profile by ID"""
+    log.info(f"Profile access request for user {user_id} by {current_user.id}")
+    try:
+        user = await user_service.get_user_profile(
+            user_id, current_user.id, current_user.role
+        )
+        user_data = UserResponse.model_validate(user).dict()
+        return UniformResponse.success_response(
+            message="User profile retrieved successfully",
+            data={"user": user_data},
+            meta={
+                "requested_by": current_user.id,
+                "access_level": _get_access_level(current_user, user),
+                "profile_privacy": _get_profile_privacy_level(user),
+            },
+        )
+    except Exception as e:
+        log.error(f"Profile access failed for user {user_id}: {str(e)}")
+        return UniformResponse.error_response(
+            message="Failed to retrieve user profile", errors=[str(e)]
+        )
+@router.put("/profile/{user_id}", response_model=UniformResponse[dict])
+async def update_user_profile(
+    user_id: str,
+    update_data: UserUpdate,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Update user profile"""
+    log.info(f"Profile update request for user {user_id} by {current_user.id}")
+    try:
+        user = await user_service.update_user_profile(
+            user_id, update_data, current_user.id, current_user.role
+        )
+        user_data = UserResponse.model_validate(user).dict()
+        updated_fields = list(update_data.dict(exclude_unset=True).keys())
+        return UniformResponse.success_response(
+            message="Profile updated successfully",
+            data={"user": user_data},
+            meta={
+                "updated_by": current_user.id,
+                "updated_fields": updated_fields,
+                "update_count": len(updated_fields),
+            },
+        )
+    except Exception as e:
+        log.error(f"Profile update failed for user {user_id}: {str(e)}")
+        return UniformResponse.error_response(
+            message="Failed to update profile", errors=[str(e)]
+        )
+@router.get("/children", response_model=PaginatedResponse[UserResponse])
+async def get_user_children(
+    current_user: User = Depends(get_parent_user),
+    include_inactive: bool = Query(False, description="Include inactive children"),
+):
+    """Get all children for the current parent"""
+    log.info(f"Children list request by parent: {current_user.id}")
+    try:
+        children = await user_service.get_user_children(current_user.id)
+        # Filter inactive children if requested
+        if not include_inactive:
+            children = [child for child in children if child.is_active]
+        children_data = [UserResponse.model_validate(child) for child in children]
+        return PaginatedResponse.success_response(
+            data=children_data,
+            total_count=len(children_data),
+            page=1,
+            page_size=len(children_data),
+            message=f"Retrieved {len(children_data)} children successfully",
+        )
+    except Exception as e:
+        log.error(f"Failed to get children for parent {current_user.id}: {str(e)}")
+        return PaginatedResponse.error_response(
+            message="Failed to retrieve children", errors=[str(e)]
+        )
+@router.post("/emergency-contact/{user_id}", response_model=UniformResponse[dict])
+async def add_emergency_contact(
+    user_id: str,
+    contact_info: dict,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Add emergency contact for a user"""
+    log.info(f"Emergency contact addition for user {user_id} by {current_user.id}")
+    try:
+        # Validate contact info structure
+        required_fields = ["name", "phone", "relationship"]
+        missing_fields = [
+            field for field in required_fields if field not in contact_info
+        ]
+        if missing_fields:
+            return UniformResponse.error_response(
+                message="Invalid contact information",
+                errors=[f"Missing required fields: {', '.join(missing_fields)}"],
+            )
+        user = await user_service.add_emergency_contact(
+            user_id, contact_info, current_user.id, current_user.role
+        )
+        user_data = UserResponse.model_validate(user).dict()
+        return UniformResponse.success_response(
+            message="Emergency contact added successfully",
+            data={"user": user_data},
+            meta={
+                "added_by": current_user.id,
+                "contact_name": contact_info.get("name"),
+                "total_contacts": len(user.emergency_contacts or []),
+            },
+        )
+    except Exception as e:
+        log.error(f"Emergency contact addition failed for user {user_id}: {str(e)}")
+        return UniformResponse.error_response(
+            message="Failed to add emergency contact", errors=[str(e)]
+        )
+@router.post("/points/{user_id}", response_model=UniformResponse[dict])
+async def update_user_points(
+    user_id: str,
+    points: int = Query(..., description="Points to add (can be negative)"),
+    reason: str = Query(None, description="Reason for point change"),
+    current_user: User = Depends(get_admin_user),
+):
+    """Update user points (admin only)"""
+    log.info(
+        f"Points update for user {user_id}: {points:+d} points by admin {current_user.id}"
+    )
+    try:
+        user = await user_service.update_user_points(user_id, points)
+        user_data = UserResponse.model_validate(user).dict()
+        return UniformResponse.success_response(
+            message=f"Points updated successfully ({points:+d})",
+            data={"user": user_data},
+            meta={
+                "updated_by": current_user.id,
+                "points_change": points,
+                "new_total": user.points,
+                "reason": reason or "Admin adjustment",
+            },
+        )
+    except Exception as e:
+        log.error(f"Points update failed for user {user_id}: {str(e)}")
+        return UniformResponse.error_response(
+            message="Failed to update points", errors=[str(e)]
+        )
+@router.post("/badge/{user_id}", response_model=UniformResponse[dict])
+async def add_user_badge(
+    user_id: str,
+    badge: str = Query(..., description="Badge to add"),
+    description: str = Query(None, description="Badge description"),
+    current_user: User = Depends(get_admin_user),
+):
+    """Add badge to user (admin only)"""
+    log.info(f"Badge addition for user {user_id}: '{badge}' by admin {current_user.id}")
+    try:
+        user = await user_service.add_user_badge(user_id, badge)
+        user_data = UserResponse.model_validate(user).dict()
+        return UniformResponse.success_response(
+            message=f"Badge '{badge}' added successfully",
+            data={"user": user_data},
+            meta={
+                "awarded_by": current_user.id,
+                "badge_name": badge,
+                "badge_description": description,
+                "total_badges": len(user.badges or []),
+            },
+        )
+    except Exception as e:
+        log.error(f"Badge addition failed for user {user_id}: {str(e)}")
+        return UniformResponse.error_response(
+            message="Failed to add badge", errors=[str(e)]
+        )
+@router.get("/stats/{user_id}", response_model=UniformResponse[dict])
+async def get_user_stats(
+    user_id: str, current_user: User = Depends(get_current_active_user)
+):
+    """Get user statistics and progress"""
+    log.info(f"Stats request for user {user_id} by {current_user.id}")
+    try:
+        user = await user_service.get_user_profile(
+            user_id, current_user.id, current_user.role
+        )
+        stats = {
+            "points": user.points,
+            "badges_count": len(user.badges or []),
+            "current_skills_count": len(user.current_skills or []),
+            "completed_skills_count": len(user.completed_skills or []),
+            "profile_completion": _calculate_profile_completeness(user),
+            "account_age_days": _calculate_account_age(user),
+            "last_activity": user.last_activity.isoformat()
+            if user.last_activity
+            else None,
+        }
+        return UniformResponse.success_response(
+            message="User statistics retrieved successfully",
+            data={"stats": stats},
+            meta={
+                "requested_by": current_user.id,
+                "stats_generated_at": user.updated_at.isoformat()
+                if user.updated_at
+                else None,
+            },
+        )
+    except Exception as e:
+        log.error(f"Stats retrieval failed for user {user_id}: {str(e)}")
+        return UniformResponse.error_response(
+            message="Failed to retrieve user statistics", errors=[str(e)]
+        )
+def _get_access_level(current_user: User, target_user: User) -> str:
+    """Determine access level for profile viewing"""
+    if current_user.id == target_user.id:
+        return "self"
+    elif current_user.role.value == "admin":
+        return "admin"
+    elif (
+        current_user.role.value == "parent" and target_user.parent_id == current_user.id
+    ):
+        return "parent"
+    else:
+        return "restricted"
+def _get_profile_privacy_level(user: User) -> str:
+    """Get profile privacy level"""
+    if user.role.value == "user":  # Child
+        return "child_protected"
+    elif user.role.value == "parent":
+        return "parent_standard"
+    else:
+        return "admin_full"
+def _calculate_profile_completeness(user: User) -> float:
+    """Calculate profile completion percentage"""
+    total_fields = 10
+    completed_fields = 0
+    if user.first_name:
+        completed_fields += 1
+    if user.last_name:
+        completed_fields += 1
+    if user.username:
+        completed_fields += 1
+    if user.email:
+        completed_fields += 1
+    if user.age:
+        completed_fields += 1
+    if user.grade_level:
+        completed_fields += 1
+    if user.avatar_url:
+        completed_fields += 1
+    if user.preferences:
+        completed_fields += 1
+    if user.current_skills:
+        completed_fields += 1
+    if user.emergency_contacts and len(user.emergency_contacts) > 0:
+        completed_fields += 1
+    return round((completed_fields / total_fields) * 100, 1)
+def _calculate_account_age(user: User) -> int:
+    """Calculate account age in days"""
+    if user.created_at:
+        from datetime import datetime, timezone
+        return (datetime.now(timezone.utc) - user.created_at).days
+    return 0
+</file>
+
+<file path="app/config/firebase.py">
+# app/config/firebase.py
+import firebase_admin
+from firebase_admin import credentials, firestore_async
+from app.config.logging import log
+from app.config.settings import settings
+def validate_firebase_config():
+    """Validate that all required Firebase configuration is present"""
+    required_fields = [
+        "firebase_project_id",
+        "firebase_private_key_id",
+        "firebase_private_key",
+        "firebase_client_email",
+        "firebase_client_id",
+    ]
+    missing_fields = []
+    for field in required_fields:
+        if not getattr(settings, field, None):
+            missing_fields.append(field)
+    if missing_fields:
+        raise ValueError(
+            f"Missing required Firebase configuration: {', '.join(missing_fields)}"
+        )
+    log.info("Firebase configuration validation passed")
+async def initialize_firebase():
+    """Initialize Firebase Admin SDK with async client and validation"""
+    try:
+        # Check if app already exists
+        app = firebase_admin.get_app()
+        log.debug("Using existing Firebase app")
+        return firestore_async.client(app)
+    except ValueError:
+        # App doesn't exist, create it
+        log.info("Initializing new Firebase app")
+        # Validate configuration first
+        validate_firebase_config()
+        cred_dict = {
+            "type": "service_account",
+            "project_id": settings.firebase_project_id,
+            "private_key_id": settings.firebase_private_key_id,
+            "private_key": settings.firebase_private_key.replace("\\n", "\n"),
+            "client_email": settings.firebase_client_email,
+            "client_id": settings.firebase_client_id,
+            "auth_uri": settings.firebase_auth_uri,
+            "token_uri": settings.firebase_token_uri,
+        }
+        try:
+            cred = credentials.Certificate(cred_dict)
+            app = firebase_admin.initialize_app(cred)
+            client = firestore_async.client(app)
+            # Test connection with async operation
+            test_doc = client.collection("_health_check").document("test")
+            await test_doc.set({"timestamp": firestore_async.SERVER_TIMESTAMP})
+            log.success(
+                "Firebase async client initialized and connection tested successfully"
+            )
+            return client
+        except Exception as e:
+            log.error(f"Failed to initialize Firebase async client: {str(e)}")
+            raise ConnectionError(f"Firebase async initialization failed: {str(e)}")
+</file>
+
+<file path="app/schemas/auth.py">
+# app/schemas/auth.py
+from pydantic import BaseModel, EmailStr, ValidationInfo, field_validator
+from app.models.base import UserRole
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    username: str
+    first_name: str
+    last_name: str
+    role: UserRole = UserRole.USER
+    # Child-specific fields
+    age: int | None = None
+    grade_level: str | None = None
+    # Parent code for linking child to parent
+    parent_code: str | None = None
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters long")
+        return v
+    @field_validator("age")
+    @classmethod
+    def validate_age(cls, v, info: ValidationInfo):
+        # Access other field values through info.data
+        if info.data.get("role") == UserRole.USER and v:
+            if v < 8 or v > 14:
+                raise ValueError("Age must be between 8 and 14 for student users")
+        return v
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v):
+        if len(v) < 6:
+            raise ValueError("New password must be at least 6 characters long")
+        return v
+class Token(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+class TokenData(BaseModel):
+    email: str | None = None
+    user_id: str | None = None
+    role: UserRole | None = None
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+class PasswordReset(BaseModel):
+    token: str
+    new_password: str
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters long")
+        return v
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+</file>
+
+<file path="app/services/auth.py">
+# app/services/auth.py
+import uuid
+from datetime import datetime, timedelta, timezone
+from firebase_admin import auth
+from firebase_admin.exceptions import FirebaseError
+from app.config.logging import log
+from app.models.base import UserRole
+from app.models.user import User
+from app.schemas.auth import Token, UserLogin, UserRegister
+from app.services.firebase import FirebaseService
+from app.utils.exceptions import AuthenticationError, ConflictError, NotFoundError
+from app.utils.security import (
+    create_access_token,
+    create_refresh_token,
+    get_password_hash,
+    verify_password,
+)
+class AuthService:
+    def __init__(self):
+        self.firebase_service = FirebaseService()
+        log.debug("AuthService initialized")
+    async def register_user(self, user_data: UserRegister) -> tuple[User, Token]:
+        """Register a new user"""
+        log.info(
+            f"Registration attempt for email: {user_data.email}, role: {user_data.role}"
+        )
+        # Check if user already exists
+        existing_user = await self.firebase_service.get_user_by_email(user_data.email)
+        if existing_user:
+            log.warning(
+                f"Registration failed - email already exists: {user_data.email}"
+            )
+            raise ConflictError("User with this email already exists")
+        existing_username = await self.firebase_service.get_user_by_username(
+            user_data.username
+        )
+        if existing_username:
+            log.warning(
+                f"Registration failed - username already taken: {user_data.username}"
+            )
+            raise ConflictError("Username already taken")
+        # Create Firebase user
+        try:
+            log.debug(f"Creating Firebase user for: {user_data.email}")
+            firebase_user = auth.create_user(
+                email=user_data.email,
+                password=user_data.password,
+                display_name=f"{user_data.first_name} {user_data.last_name}",
+            )
+            log.success(f"Firebase user created with UID: {firebase_user.uid}")
+        except FirebaseError as e:
+            log.error(f"Firebase user creation failed: {str(e)}")
+            raise ConflictError(f"Failed to create user: {str(e)}")
+        # Handle parent-child linking
+        parent_id = None
+        if user_data.role == UserRole.USER and user_data.parent_code:
+            log.debug(
+                f"Verifying parent code for child registration: {user_data.parent_code}"
+            )
+            parent_id = await self._verify_parent_code(user_data.parent_code)
+            log.info(f"Child linked to parent: {parent_id}")
+        # Hash password for our database (backup/verification)
+        hashed_password = get_password_hash(user_data.password)
+        # Create user document
+        user_doc_data = {
+            "email": user_data.email,
+            "firebase_uid": firebase_user.uid,
+            "username": user_data.username,
+            "first_name": user_data.first_name,
+            "last_name": user_data.last_name,
+            "password_hash": hashed_password,
+            "role": user_data.role.value,
+            "is_active": True,
+            "is_verified": False,
+            "age": user_data.age,
+            "grade_level": user_data.grade_level,
+            "parent_id": parent_id,
+            "children_ids": [],
+            "current_skills": [],
+            "completed_skills": [],
+            "points": 0,
+            "badges": [],
+            "emergency_contacts": [],
+            "preferences": {},
+        }
+        log.debug("Creating user document in Firestore")
+        user_id = await self.firebase_service.create_document("users", user_doc_data)
+        log.success(f"User document created with ID: {user_id}")
+        # Update parent's children list if applicable
+        if parent_id:
+            await self._add_child_to_parent(parent_id, user_id)
+        # Create tokens
+        token_data = {
+            "sub": user_data.email,
+            "user_id": user_id,
+            "role": user_data.role.value,
+        }
+        access_token = create_access_token(token_data)
+        refresh_token = create_refresh_token(token_data)
+        # Save refresh token
+        await self._save_refresh_token(user_id, refresh_token)
+        # Create user object (exclude password hash from response)
+        user_doc_data["id"] = user_id
+        user_doc_data.pop("password_hash", None)
+        user = User(**user_doc_data)
+        token = Token(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=1800,  # 30 minutes
+        )
+        log.success(f"User registration completed successfully: {user_data.email}")
+        return user, token
+    async def login_user(self, login_data: UserLogin) -> tuple[User, Token]:
+        """Authenticate user and return tokens"""
+        log.info(f"Login attempt for email: {login_data.email}")
+        # Get user from database
+        user_doc = await self.firebase_service.get_user_by_email(login_data.email)
+        if not user_doc:
+            log.warning(f"Login failed - user not found: {login_data.email}")
+            raise AuthenticationError("Invalid email or password")
+        # Verify password using our stored hash
+        stored_password_hash = user_doc.get("password_hash")
+        if not stored_password_hash or not verify_password(
+            login_data.password, stored_password_hash
+        ):
+            log.warning(f"Login failed - invalid password: {login_data.email}")
+            raise AuthenticationError("Invalid email or password")
+        # Additional verification with Firebase Auth (optional double-check)
+        try:
+            firebase_user = auth.get_user_by_email(login_data.email)
+            if firebase_user.disabled:
+                log.warning(
+                    f"Login failed - Firebase account disabled: {login_data.email}"
+                )
+                raise AuthenticationError("Account is disabled")
+        except FirebaseError as e:
+            log.error(f"Firebase authentication error: {str(e)}")
+            raise AuthenticationError("Authentication service error")
+        if not user_doc.get("is_active", True):
+            log.warning(f"Login failed - account deactivated: {login_data.email}")
+            raise AuthenticationError("Account is deactivated")
+        # Update last login
+        log.debug(f"Updating last login timestamp for user: {user_doc['id']}")
+        await self.firebase_service.update_document(
+            "users", user_doc["id"], {"last_login": datetime.now(timezone.utc)}
+        )
+        # Create tokens
+        token_data = {
+            "sub": user_doc["email"],
+            "user_id": user_doc["id"],
+            "role": user_doc["role"],
+        }
+        access_token = create_access_token(token_data)
+        refresh_token = create_refresh_token(token_data)
+        # Save refresh token
+        await self._save_refresh_token(user_doc["id"], refresh_token)
+        # Remove password hash before creating user object
+        user_doc.pop("password_hash", None)
+        user = User(**user_doc)
+        token = Token(
+            access_token=access_token, refresh_token=refresh_token, expires_in=1800
+        )
+        log.success(f"User login successful: {login_data.email}")
+        return user, token
+    async def refresh_access_token(self, refresh_token: str) -> Token:
+        """Refresh access token using refresh token"""
+        log.debug("Refresh token request received")
+        # Verify refresh token
+        from ..utils.security import verify_token
+        token_data = verify_token(refresh_token)
+        if not token_data:
+            log.warning("Invalid refresh token provided")
+            raise AuthenticationError("Invalid refresh token")
+        # Check if refresh token exists and is not revoked
+        refresh_tokens = await self.firebase_service.query_documents(
+            "refresh_tokens", "token", "==", refresh_token
+        )
+        if not refresh_tokens or refresh_tokens[0].get("is_revoked", False):
+            log.warning("Refresh token revoked or not found")
+            raise AuthenticationError("Refresh token revoked or not found")
+        # Check if token is expired
+        token_doc = refresh_tokens[0]
+        if token_doc.get("expires_at") < datetime.now(timezone.utc):
+            log.warning("Refresh token expired")
+            raise AuthenticationError("Refresh token expired")
+        # Create new access token
+        new_token_data = {
+            "sub": token_data.email,
+            "user_id": token_data.user_id,
+            "role": token_data.role,
+        }
+        access_token = create_access_token(new_token_data)
+        log.success(f"Access token refreshed for user: {token_data.user_id}")
+        return Token(
+            access_token=access_token,
+            refresh_token=refresh_token,  # Keep the same refresh token
+            expires_in=1800,
+        )
+    async def logout_user(self, refresh_token: str) -> bool:
+        """Logout user by revoking refresh token"""
+        log.info("User logout requested")
+        refresh_tokens = await self.firebase_service.query_documents(
+            "refresh_tokens", "token", "==", refresh_token
+        )
+        if refresh_tokens:
+            log.debug(f"Revoking refresh token: {refresh_tokens[0]['id']}")
+            await self.firebase_service.update_document(
+                "refresh_tokens", refresh_tokens[0]["id"], {"is_revoked": True}
+            )
+            log.success("User logout completed successfully")
+        else:
+            log.warning("Logout requested with non-existent refresh token")
+        return True
+    async def generate_parent_code(self, parent_id: str) -> str:
+        """Generate a full UUID-based parent code for child registration"""
+        log.info(f"Generating parent code for parent: {parent_id}")
+        # Generate a full UUID for maximum security (128 bits of entropy)
+        code = str(uuid.uuid4())
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)  # 24-hour expiry
+        code_data = {
+            "code": code,
+            "parent_id": parent_id,
+            "expires_at": expires_at,
+            "used": False,
+        }
+        await self.firebase_service.create_document("parent_codes", code_data)
+        log.success(f"Parent code generated successfully (length: {len(code)} chars)")
+        return code
+    async def _verify_parent_code(self, code: str) -> str | None:
+        """Verify parent code and return parent ID"""
+        log.debug(f"Verifying parent code (length: {len(code)} chars)")
+        codes = await self.firebase_service.query_documents(
+            "parent_codes", "code", "==", code
+        )
+        if not codes:
+            log.warning("Invalid parent code provided")
+            raise NotFoundError("Invalid parent code")
+        code_doc = codes[0]
+        if code_doc.get("used", False):
+            log.warning("Parent code already used")
+            raise ConflictError("Parent code already used")
+        if code_doc.get("expires_at") < datetime.now(timezone.utc):
+            log.warning("Parent code expired")
+            raise ConflictError("Parent code expired")
+        # Mark code as used
+        await self.firebase_service.update_document(
+            "parent_codes", code_doc["id"], {"used": True}
+        )
+        log.success("Parent code verified successfully")
+        return code_doc["parent_id"]
+    async def change_password(
+        self, user_id: str, current_password: str, new_password: str
+    ) -> bool:
+        """Change user password"""
+        log.info(f"Password change request for user: {user_id}")
+        # Get user document
+        user_doc = await self.firebase_service.get_document("users", user_id)
+        if not user_doc:
+            log.error(f"User not found for password change: {user_id}")
+            raise NotFoundError("User not found")
+        # Verify current password
+        stored_password_hash = user_doc.get("password_hash")
+        if not stored_password_hash or not verify_password(
+            current_password, stored_password_hash
+        ):
+            log.warning(
+                f"Password change failed - incorrect current password: {user_id}"
+            )
+            raise AuthenticationError("Current password is incorrect")
+        # Update password in Firebase Auth
+        try:
+            log.debug(
+                f"Updating Firebase password for user: {user_doc['firebase_uid']}"
+            )
+            auth.update_user(user_doc["firebase_uid"], password=new_password)
+        except FirebaseError as e:
+            log.error(f"Firebase password update failed: {str(e)}")
+            raise AuthenticationError(f"Failed to update password: {str(e)}")
+        # Update password hash in our database
+        new_password_hash = get_password_hash(new_password)
+        await self.firebase_service.update_document(
+            "users", user_id, {"password_hash": new_password_hash}
+        )
+        # Revoke all existing refresh tokens for security
+        log.debug(f"Revoking all refresh tokens for user: {user_id}")
+        refresh_tokens = await self.firebase_service.query_documents(
+            "refresh_tokens", "user_id", "==", user_id
+        )
+        for token_doc in refresh_tokens:
+            if not token_doc.get("is_revoked", False):
+                await self.firebase_service.update_document(
+                    "refresh_tokens", token_doc["id"], {"is_revoked": True}
+                )
+        log.success(f"Password changed successfully for user: {user_id}")
+        return True
+    async def _add_child_to_parent(self, parent_id: str, child_id: str) -> bool:
+        """Add child ID to parent's children list"""
+        log.debug(f"Adding child {child_id} to parent {parent_id}")
+        parent_doc = await self.firebase_service.get_document("users", parent_id)
+        if not parent_doc:
+            log.error(f"Parent not found: {parent_id}")
+            return False
+        children_ids = parent_doc.get("children_ids", [])
+        if child_id not in children_ids:
+            children_ids.append(child_id)
+            await self.firebase_service.update_document(
+                "users", parent_id, {"children_ids": children_ids}
+            )
+            log.success("Child successfully added to parent's list")
+        else:
+            log.warning(f"Child already in parent's list: {child_id}")
+        return True
+    async def _save_refresh_token(self, user_id: str, refresh_token: str) -> None:
+        """Save refresh token to database"""
+        log.debug(f"Saving refresh token for user: {user_id}")
+        token_data = {
+            "token": refresh_token,
+            "user_id": user_id,
+            "expires_at": datetime.now(timezone.utc) + timedelta(days=30),
+            "is_revoked": False,
+        }
+        await self.firebase_service.create_document("refresh_tokens", token_data)
+        log.debug("Refresh token saved successfully")
+</file>
+
+<file path="app/services/firebase.py">
+# app/services/firebase.py
+from datetime import datetime, timezone
+from typing import Any
+from firebase_admin import firestore_async
+from app.config.firebase import initialize_firebase
+from app.config.logging import log
+class FirebaseService:
+    def __init__(self):
+        self.db = None
+        log.debug("FirebaseService initialized (async client will be set on first use)")
+    async def _ensure_client(self):
+        """Ensure async client is initialized"""
+        if self.db is None:
+            self.db = await initialize_firebase()
+            log.debug("Async Firestore client initialized")
+    async def create_document(
+        self, collection: str, data: dict[str, Any], doc_id: str | None = None
+    ) -> str:
+        """Create a new document in Firestore using async operations"""
+        await self._ensure_client()
+        log.debug(f"Creating document in collection: {collection}")
+        data["created_at"] = datetime.now(timezone.utc)
+        data["updated_at"] = datetime.now(timezone.utc)
+        try:
+            if doc_id:
+                log.debug(f"Creating document with custom ID: {doc_id}")
+                doc_ref = self.db.collection(collection).document(doc_id)
+                await doc_ref.set(data)
+                log.success(f"Document created successfully: {collection}/{doc_id}")
+                return doc_id
+            else:
+                log.debug("Creating document with auto-generated ID")
+                doc_ref = self.db.collection(collection)
+                _, doc_ref = await doc_ref.add(data)
+                document_id = doc_ref.id
+                log.success(
+                    f"Document created successfully: {collection}/{document_id}"
+                )
+                return document_id
+        except Exception as e:
+            log.error(f"Failed to create document in {collection}: {str(e)}")
+            raise
+    async def get_document(self, collection: str, doc_id: str) -> dict[str, Any] | None:
+        """Get a document by ID using async operations"""
+        await self._ensure_client()
+        log.debug(f"Retrieving document: {collection}/{doc_id}")
+        try:
+            doc_ref = self.db.collection(collection).document(doc_id)
+            doc = await doc_ref.get()
+            if doc.exists:
+                data = doc.to_dict()
+                data["id"] = doc.id
+                log.debug(f"Document retrieved successfully: {collection}/{doc_id}")
+                return data
+            else:
+                log.warning(f"Document not found: {collection}/{doc_id}")
+                return None
+        except Exception as e:
+            log.error(f"Failed to retrieve document {collection}/{doc_id}: {str(e)}")
+            raise
+    async def update_document(
+        self, collection: str, doc_id: str, data: dict[str, Any]
+    ) -> bool:
+        """Update a document using async operations"""
+        await self._ensure_client()
+        log.debug(f"Updating document: {collection}/{doc_id}")
+        data["updated_at"] = datetime.now(timezone.utc)
+        try:
+            doc_ref = self.db.collection(collection).document(doc_id)
+            await doc_ref.update(data)
+            log.success(f"Document updated successfully: {collection}/{doc_id}")
+            return True
+        except Exception as e:
+            log.error(f"Failed to update document {collection}/{doc_id}: {str(e)}")
+            raise
+    async def delete_document(self, collection: str, doc_id: str) -> bool:
+        """Delete a document using async operations"""
+        await self._ensure_client()
+        log.info(f"Deleting document: {collection}/{doc_id}")
+        try:
+            doc_ref = self.db.collection(collection).document(doc_id)
+            await doc_ref.delete()
+            log.success(f"Document deleted successfully: {collection}/{doc_id}")
+            return True
+        except Exception as e:
+            log.error(f"Failed to delete document {collection}/{doc_id}: {str(e)}")
+            raise
+    async def query_documents(
+        self, collection: str, field: str, operator: str, value: Any
+    ) -> list[dict[str, Any]]:
+        """Query documents with a single condition using async operations"""
+        await self._ensure_client()
+        log.debug(f"Querying collection {collection}: {field} {operator} {value}")
+        try:
+            query = self.db.collection(collection).where(field, operator, value)
+            docs = query.stream()
+            results = []
+            async for doc in docs:
+                data = doc.to_dict()
+                data["id"] = doc.id
+                results.append(data)
+            log.debug(
+                f"Query completed - {len(results)} documents found in {collection}"
+            )
+            return results
+        except Exception as e:
+            log.error(f"Failed to query collection {collection}: {str(e)}")
+            raise
+    async def batch_create_documents(
+        self, collection: str, documents: list[dict[str, Any]]
+    ) -> list[str]:
+        """Create multiple documents in a batch operation"""
+        await self._ensure_client()
+        log.debug(
+            f"Creating {len(documents)} documents in batch for collection: {collection}"
+        )
+        try:
+            batch = self.db.batch()
+            doc_ids = []
+            for doc_data in documents:
+                doc_data["created_at"] = datetime.now(timezone.utc)
+                doc_data["updated_at"] = datetime.now(timezone.utc)
+                doc_ref = self.db.collection(collection).document()
+                batch.set(doc_ref, doc_data)
+                doc_ids.append(doc_ref.id)
+            await batch.commit()
+            log.success(f"Batch created {len(documents)} documents successfully")
+            return doc_ids
+        except Exception as e:
+            log.error(f"Failed to batch create documents in {collection}: {str(e)}")
+            raise
+    async def transaction_update(
+        self, collection: str, doc_id: str, update_func, *args, **kwargs
+    ) -> Any:
+        """Perform a transaction update"""
+        await self._ensure_client()
+        log.debug(f"Starting transaction for document: {collection}/{doc_id}")
+        @firestore_async.transactional
+        async def update_in_transaction(transaction):
+            doc_ref = self.db.collection(collection).document(doc_id)
+            doc = await doc_ref.get(transaction=transaction)
+            if not doc.exists:
+                raise ValueError(f"Document {collection}/{doc_id} does not exist")
+            current_data = doc.to_dict()
+            updated_data = update_func(current_data, *args, **kwargs)
+            updated_data["updated_at"] = datetime.now(timezone.utc)
+            transaction.update(doc_ref, updated_data)
+            return updated_data
+        try:
+            result = await update_in_transaction(self.db.transaction())
+            log.success(f"Transaction completed for document: {collection}/{doc_id}")
+            return result
+        except Exception as e:
+            log.error(
+                f"Transaction failed for document {collection}/{doc_id}: {str(e)}"
+            )
+            raise
+    async def get_user_by_email(self, email: str) -> dict[str, Any] | None:
+        """Get user by email using async operations"""
+        log.debug(f"Looking up user by email: {email}")
+        users = await self.query_documents("users", "email", "==", email)
+        result = users[0] if users else None
+        if result:
+            log.debug(f"User found by email: {email}")
+        else:
+            log.debug(f"No user found with email: {email}")
+        return result
+    async def get_user_by_username(self, username: str) -> dict[str, Any] | None:
+        """Get user by username using async operations"""
+        log.debug(f"Looking up user by username: {username}")
+        users = await self.query_documents("users", "username", "==", username)
+        result = users[0] if users else None
+        if result:
+            log.debug(f"User found by username: {username}")
+        else:
+            log.debug(f"No user found with username: {username}")
+        return result
+</file>
+
+<file path="app/utils/exceptions.py">
+# app/utils/exceptions.py
+from fastapi import HTTPException, Request, status
+from fastapi.responses import JSONResponse
+from app.config.logging import log
+from app.schemas.base import UniformResponse
+class BaseAPIException(HTTPException):
+    """Base exception class for API errors"""
+    def __init__(
+        self,
+        status_code: int,
+        message: str = "An error occurred",
+        errors: list[str] | None = None,
+        meta: dict | None = None,
+    ):
+        self.message = message
+        self.errors = errors or []
+        self.meta = meta or {}
+        super().__init__(status_code=status_code, detail=message)
+class AuthenticationError(BaseAPIException):
+    def __init__(
+        self, message: str = "Authentication failed", errors: list[str] | None = None
+    ):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message=message,
+            errors=errors,
+            meta={"error_type": "authentication"},
+        )
+class AuthorizationError(BaseAPIException):
+    def __init__(
+        self, message: str = "Not enough permissions", errors: list[str] | None = None
+    ):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            message=message,
+            errors=errors,
+            meta={"error_type": "authorization"},
+        )
+class NotFoundError(BaseAPIException):
+    def __init__(
+        self, message: str = "Resource not found", errors: list[str] | None = None
+    ):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message=message,
+            errors=errors,
+            meta={"error_type": "not_found"},
+        )
+class ValidationError(BaseAPIException):
+    def __init__(
+        self, message: str = "Validation error", errors: list[str] | None = None
+    ):
+        super().__init__(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            message=message,
+            errors=errors,
+            meta={"error_type": "validation"},
+        )
+class ConflictError(BaseAPIException):
+    def __init__(
+        self, message: str = "Resource already exists", errors: list[str] | None = None
+    ):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            message=message,
+            errors=errors,
+            meta={"error_type": "conflict"},
+        )
+class BadRequestError(BaseAPIException):
+    def __init__(self, message: str = "Bad request", errors: list[str] | None = None):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message=message,
+            errors=errors,
+            meta={"error_type": "bad_request"},
+        )
+class InternalServerError(BaseAPIException):
+    def __init__(
+        self, message: str = "Internal server error", errors: list[str] | None = None
+    ):
+        super().__init__(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=message,
+            errors=errors,
+            meta={"error_type": "internal_server"},
+        )
+class RateLimitError(BaseAPIException):
+    def __init__(
+        self, message: str = "Rate limit exceeded", errors: list[str] | None = None
+    ):
+        super().__init__(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            message=message,
+            errors=errors,
+            meta={"error_type": "rate_limit"},
+        )
+class ServiceUnavailableError(BaseAPIException):
+    def __init__(
+        self,
+        message: str = "Service temporarily unavailable",
+        errors: list[str] | None = None,
+    ):
+        super().__init__(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message=message,
+            errors=errors,
+            meta={"error_type": "service_unavailable"},
+        )
+# Exception handlers
+async def base_api_exception_handler(request: Request, exc: BaseAPIException):
+    """Handle custom API exceptions with uniform response format"""
+    log.warning(f"API Exception: {exc.message} - {exc.errors}")
+    response = UniformResponse.error_response(
+        message=exc.message,
+        errors=exc.errors,
+        meta={**exc.meta, "path": str(request.url.path), "method": request.method},
+    )
+    return JSONResponse(status_code=exc.status_code, content=response.dict())
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Handle standard HTTP exceptions with uniform response format"""
+    log.warning(f"HTTP Exception: {exc.status_code} - {exc.detail}")
+    response = UniformResponse.error_response(
+        message=str(exc.detail),
+        errors=[str(exc.detail)],
+        meta={
+            "error_type": "http_exception",
+            "status_code": exc.status_code,
+            "path": str(request.url.path),
+            "method": request.method,
+        },
+    )
+    return JSONResponse(status_code=exc.status_code, content=response.dict())
+async def validation_exception_handler(request: Request, exc):
+    """Handle Pydantic validation exceptions"""
+    from pydantic import ValidationError as PydanticValidationError
+    if isinstance(exc, PydanticValidationError):
+        errors = []
+        for error in exc.errors():
+            field = " -> ".join(str(x) for x in error["loc"])
+            message = error["msg"]
+            errors.append(f"{field}: {message}")
+        log.warning(f"Validation Exception: {errors}")
+        response = UniformResponse.error_response(
+            message="Validation failed",
+            errors=errors,
+            meta={
+                "error_type": "validation",
+                "path": str(request.url.path),
+                "method": request.method,
+            },
+        )
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, content=response.dict()
+        )
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle all other exceptions"""
+    import traceback
+    log.error(f"Unhandled exception: {str(exc)}")
+    log.error(f"Traceback: {traceback.format_exc()}")
+    # Don't expose internal errors in production
+    from app.config.settings import settings
+    if settings.debug:
+        error_detail = str(exc)
+        errors = [str(exc), traceback.format_exc()]
+    else:
+        error_detail = "An unexpected error occurred"
+        errors = ["Internal server error"]
+    response = UniformResponse.error_response(
+        message=error_detail,
+        errors=errors,
+        meta={
+            "error_type": "internal_server",
+            "path": str(request.url.path),
+            "method": request.method,
+        },
+    )
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=response.dict()
+    )
+</file>
+
+<file path="app/main.py">
+# app/main.py
+import traceback
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
+from app.api.v1.router import api_router
+from app.config.firebase import initialize_firebase
+from app.config.logging import log
+from app.config.settings import settings
+from app.schemas.base import UniformResponse
+from app.utils.exceptions import (
+    BaseAPIException,
+    base_api_exception_handler,
+    general_exception_handler,
+    http_exception_handler,
+    validation_exception_handler,
+)
+# Initialize logging first
+log.info("Starting Life Skills App API...")
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Initialize Firebase on startup and cleanup on shutdown"""
+    log.info("Initializing async Firebase client...")
+    try:
+        # Initialize async Firebase client
+        firebase_client = await initialize_firebase()
+        # Store client in app state for access by services
+        app.state.firebase_client = firebase_client
+        log.success("Async Firebase client initialized successfully")
+    except Exception as e:
+        log.error(f"Failed to initialize async Firebase client: {e}")
+        log.error(f"Traceback: {traceback.format_exc()}")
+        raise
+    yield
+    # Cleanup code here if needed
+    log.info("Application shutdown complete")
+app = FastAPI(
+    title=settings.app_name,
+    description="Backend API for Life Skills App - Helping children develop essential life skills",
+    version="1.0.0",
+    debug=settings.debug,
+    lifespan=lifespan,
+)
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+log.info("CORS middleware configured")
+# Register exception handlers
+app.add_exception_handler(BaseAPIException, base_api_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(ValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
+log.info("Exception handlers registered")
+# Include API routes
+app.include_router(api_router)
+log.info("API routes registered")
+@app.get("/health", response_model=UniformResponse[dict])
+async def health_check():
+    """Comprehensive health check including async Firebase connectivity"""
+    log.debug("Health check requested")
+    health_data = {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "version": "1.0.0",
+        "services": {},
+        "environment": settings.environment,
+    }
+    # Check Firebase connectivity using async operations
+    try:
+        from app.services.firebase import FirebaseService
+        firebase_service = FirebaseService()
+        # Try a simple async operation
+        test_collection = "_health_check"
+        current_time = datetime.now(timezone.utc)
+        # Create a test document
+        test_data = {"timestamp": current_time, "health_check": True}
+        doc_id = await firebase_service.create_document(test_collection, test_data)
+        # Try to retrieve it
+        retrieved_doc = await firebase_service.get_document(test_collection, doc_id)
+        if retrieved_doc:
+            # Clean up the test document
+            await firebase_service.delete_document(test_collection, doc_id)
+            health_data["services"]["firebase"] = {
+                "status": "healthy",
+                "message": "Async operations working correctly",
+                "response_time_ms": (
+                    datetime.now(timezone.utc) - current_time
+                ).total_seconds()
+                * 1000,
+            }
+        else:
+            health_data["status"] = "degraded"
+            health_data["services"]["firebase"] = {
+                "status": "unhealthy",
+                "message": "Document creation/retrieval failed",
+            }
+    except Exception as e:
+        health_data["status"] = "degraded"
+        health_data["services"]["firebase"] = {
+            "status": "unhealthy",
+            "message": f"Async connection failed: {str(e)}",
+        }
+        log.warning(f"Firebase async health check failed: {str(e)}")
+    # Determine response based on status
+    if health_data["status"] == "healthy":
+        return UniformResponse.success_response(
+            message="All systems operational",
+            data=health_data,
+            meta={"check_performed_at": datetime.now(timezone.utc).isoformat()},
+        )
+    else:
+        return UniformResponse.error_response(
+            message="Some services are experiencing issues",
+            errors=[
+                f"Service {name} is {info['status']}"
+                for name, info in health_data["services"].items()
+                if info["status"] != "healthy"
+            ],
+        )
+@app.get("/", response_model=UniformResponse[dict])
+async def root():
+    """Root endpoint with API information"""
+    log.debug("Root endpoint accessed")
+    api_info = {
+        "name": settings.app_name,
+        "version": "1.0.0",
+        "description": "Backend API for Life Skills App - Helping children develop essential life skills",
+        "environment": settings.environment,
+        "firebase_mode": "async",
+        "endpoints": {
+            "documentation": "/docs",
+            "health_check": "/health",
+            "api_base": "/api/v1",
+        },
+        "features": [
+            "User Authentication & Authorization",
+            "Parent-Child Account Linking",
+            "Skill Progress Tracking",
+            "Points & Badge System",
+            "Emergency Contacts Management",
+        ],
+    }
+    return UniformResponse.success_response(
+        message="Welcome to Life Skills App API",
+        data=api_info,
+        meta={
+            "server_time": datetime.now(timezone.utc).isoformat(),
+            "request_id": id(api_info),  # Simple request tracking
+        },
+    )
+</file>
+
+<file path="app/api/v1/auth.py">
+# app/api/v1/auth.py
+from fastapi import APIRouter, Depends
+from app.api.dependencies.auth import get_current_active_user, get_parent_user
+from app.config.logging import log
+from app.models.user import User
+from app.schemas.auth import (
+    PasswordChangeRequest,
+    RefreshTokenRequest,
+    UserLogin,
+    UserRegister,
+)
+from app.schemas.base import UniformResponse
+from app.schemas.user import UserResponse
+from app.services.auth import AuthService
+router = APIRouter(prefix="/auth", tags=["Authentication"])
+auth_service = AuthService()
+@router.post("/register", response_model=UniformResponse[dict])
+async def register_user(user_data: UserRegister):
+    """Register a new user"""
+    log.info(f"Registration endpoint called for email: {user_data.email}")
+    try:
+        user, token = await auth_service.register_user(user_data)
+        log.success(f"User registration successful via API: {user_data.email}")
+        response_data = {
+            "user": UserResponse.model_validate(user).model_dump(),
+            "token": token.model_dump(),
+        }
+        return UniformResponse.success_response(
+            message="User registered successfully",
+            data=response_data,
+            meta={"registration_method": "email"},
+        )
+    except Exception as e:
+        log.error(f"Registration failed via API for {user_data.email}: {str(e)}")
+        return UniformResponse.error_response(
+            message="Registration failed", errors=[str(e)]
+        )
+@router.post("/login", response_model=UniformResponse[dict])
+async def login_user(login_data: UserLogin):
+    """Authenticate user and return tokens"""
+    log.info(f"Login endpoint called for email: {login_data.email}")
+    try:
+        user, token = await auth_service.login_user(login_data)
+        log.success(f"User login successful via API: {login_data.email}")
+        response_data = {
+            "user": UserResponse.model_validate(user).model_dump(),
+            "token": token.model_dump(),
+        }
+        return UniformResponse.success_response(
+            message="Login successful",
+            data=response_data,
+            meta={
+                "login_timestamp": user.last_login.isoformat()
+                if user.last_login
+                else None
+            },
+        )
+    except Exception as e:
+        log.error(f"Login failed via API for {login_data.email}: {str(e)}")
+        return UniformResponse.error_response(message="Login failed", errors=[str(e)])
+@router.post("/refresh", response_model=UniformResponse[dict])
+async def refresh_token(refresh_data: RefreshTokenRequest):
+    """Refresh access token"""
+    log.info("Token refresh endpoint called")
+    try:
+        token = await auth_service.refresh_access_token(refresh_data.refresh_token)
+        log.success("Token refresh successful via API")
+        return UniformResponse.success_response(
+            message="Token refreshed successfully",
+            data={"token": token.model_dump()},
+            meta={"refresh_timestamp": token.expires_in},
+        )
+    except Exception as e:
+        log.error(f"Token refresh failed via API: {str(e)}")
+        return UniformResponse.error_response(
+            message="Token refresh failed", errors=[str(e)]
+        )
+@router.post("/logout", response_model=UniformResponse[None])
+async def logout_user(
+    refresh_data: RefreshTokenRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Logout user"""
+    log.info(f"Logout endpoint called for user: {current_user.id}")
+    try:
+        await auth_service.logout_user(refresh_data.refresh_token)
+        log.success(f"User logout successful via API: {current_user.id}")
+        return UniformResponse.success_response(
+            message="Logout successful", meta={"user_id": current_user.id}
+        )
+    except Exception as e:
+        log.error(f"Logout failed via API for user {current_user.id}: {str(e)}")
+        return UniformResponse.error_response(message="Logout failed", errors=[str(e)])
+@router.post("/change-password", response_model=UniformResponse[None])
+async def change_password(
+    password_data: PasswordChangeRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Change user password"""
+    log.info(f"Password change endpoint called for user: {current_user.id}")
+    try:
+        await auth_service.change_password(
+            current_user.id, password_data.current_password, password_data.new_password
+        )
+        log.success(f"Password change successful via API: {current_user.id}")
+        return UniformResponse.success_response(
+            message="Password changed successfully",
+            meta={"user_id": current_user.id, "security_action": "password_change"},
+        )
+    except Exception as e:
+        log.error(
+            f"Password change failed via API for user {current_user.id}: {str(e)}"
+        )
+        return UniformResponse.error_response(
+            message="Password change failed", errors=[str(e)]
+        )
+@router.post("/generate-parent-code", response_model=UniformResponse[dict])
+async def generate_parent_code(current_user: User = Depends(get_parent_user)):
+    """Generate a parent code for child registration"""
+    log.info(f"Parent code generation endpoint called for user: {current_user.id}")
+    try:
+        code = await auth_service.generate_parent_code(current_user.id)
+        log.success(f"Parent code generated successfully via API: {current_user.id}")
+        return UniformResponse.success_response(
+            message="Parent code generated successfully",
+            data={"code": code},
+            meta={
+                "parent_id": current_user.id,
+                "expires_in_hours": 24,
+                "usage": "single_use",
+            },
+        )
+    except Exception as e:
+        log.error(
+            f"Parent code generation failed via API for user {current_user.id}: {str(e)}"
+        )
+        return UniformResponse.error_response(
+            message="Parent code generation failed", errors=[str(e)]
+        )
+@router.get("/me", response_model=UniformResponse[dict])
+async def get_current_user_info(current_user: User = Depends(get_current_active_user)):
+    """Get current user information"""
+    log.debug(f"User info endpoint called for user: {current_user.id}")
+    try:
+        user_data = UserResponse.model_validate(current_user).model_dump()
+        return UniformResponse.success_response(
+            message="User information retrieved successfully",
+            data={"user": user_data},
+            meta={
+                "profile_completeness": _calculate_profile_completeness(current_user),
+                "account_age_days": _calculate_account_age(current_user),
+            },
+        )
+    except Exception as e:
+        log.error(f"Failed to retrieve user info for {current_user.id}: {str(e)}")
+        return UniformResponse.error_response(
+            message="Failed to retrieve user information", errors=[str(e)]
+        )
+def _calculate_profile_completeness(user: User) -> float:
+    """Calculate profile completion percentage"""
+    total_fields = 10
+    completed_fields = 0
+    if user.first_name:
+        completed_fields += 1
+    if user.last_name:
+        completed_fields += 1
+    if user.username:
+        completed_fields += 1
+    if user.email:
+        completed_fields += 1
+    if user.age:
+        completed_fields += 1
+    if user.grade_level:
+        completed_fields += 1
+    if user.avatar_url:
+        completed_fields += 1
+    if user.preferences:
+        completed_fields += 1
+    if user.current_skills:
+        completed_fields += 1
+    if user.emergency_contacts and len(user.emergency_contacts) > 0:
+        completed_fields += 1
+    return round((completed_fields / total_fields) * 100, 1)
+def _calculate_account_age(user: User) -> int:
+    """Calculate account age in days"""
+    if user.created_at:
+        from datetime import datetime, timezone
+        return (datetime.now(timezone.utc) - user.created_at).days
+    return 0
+</file>
+
+</files>
