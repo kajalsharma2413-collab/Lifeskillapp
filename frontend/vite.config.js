@@ -2,14 +2,12 @@
 import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import commonjs from '@rollup/plugin-commonjs'; // Make sure this is imported
 
 // import vueDevTools from 'vite-plugin-vue-devtools'; // Uncomment if needed
 
 export default defineConfig({
   plugins: [
     vue(),
-    commonjs(), // Ensure this is present and correctly placed
     // vueDevTools() // Uncomment this if you want to use Vue DevTools
   ],
   resolve: {
@@ -26,13 +24,18 @@ export default defineConfig({
       }
     }
   },
-  assetsInclude: ['**/*.{JPG,jpg,png,svg}'], // Supports additional image formats
-  // ADD THIS BLOCK TO SOLVE "process is not defined" ERROR
+  assetsInclude: ['**/*.{JPG,jpg,png,svg}'],
   define: {
     'process.env': {}
   },
-  // ADD THIS BLOCK for improved dependency pre-bundling with pdf.js
+  // Pre-bundle CJS dependencies so Rollup can handle them in production
   optimizeDeps: {
-    include: ['pdfjs-dist'], // Only need pdfjs-dist if not using vue-pdf wrapper
-  }
+    include: ['pdfjs-dist', '@vapi-ai/web'],
+  },
+  build: {
+    // Tell Rollup's built-in commonjs plugin to process @vapi-ai/web
+    commonjsOptions: {
+      include: [/@vapi-ai\/web/, /node_modules/],
+    },
+  },
 });
